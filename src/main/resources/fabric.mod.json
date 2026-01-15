@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "id": "chipmakermc",
+  "version": "${version}",
+  "name": "ChipMakerMC",
+  "description": "",
+  "authors": [],
+  "contact": {},
+  "license": "MIT",
+  "icon": "assets/chipmakermc/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "fabric-datagen": [
+      "com.mightyfilipns.chipmakermc.client.ChipmakermcDataGenerator"
+    ],
+    "client": [
+      "com.mightyfilipns.chipmakermc.client.ChipmakermcClient"
+    ],
+    "main": [
+      "com.mightyfilipns.chipmakermc.Chipmakermc"
+    ]
+  },
+  "mixins": [
+    "chipmakermc.mixins.json",
+    {
+      "config": "chipmakermc.client.mixins.json",
+      "environment": "client"
+    }
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric-api": "*",
+    "minecraft": "${minecraft_version}"
+  }
+}
