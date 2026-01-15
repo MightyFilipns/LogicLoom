@@ -37,12 +37,31 @@ public class Placer
 
     public static HashMap<Integer, BlockPos> rel_port_pos = null;
     public static Map<CellInfo, BlockPos> g_mp = null;
+    static int[] g_xsa = null;
+    static int[] g_zsa = null;
     public static int PlaceDesign(CommandContext<ServerCommandSource> context)
     {
         var des = Chipmakermc.loaded_design;
         var mod = (JsonDesign.DesignModule)des.modules.values().toArray()[0];
 
         DoSimplePlacer2(context, mod);
+
+        return 1;
+    }
+
+    public static int PlaceCache(CommandContext<ServerCommandSource> context)
+    {
+        if(g_zsa == null || g_xsa == null || g_mp == null)
+        {
+            context.getSource().sendError(Text.literal("Cache empty"));
+            return 0;
+        }
+
+        var des = Chipmakermc.loaded_design;
+        var mod = (JsonDesign.DesignModule)des.modules.values().toArray()[0];
+
+        PlaceMtx(g_xsa, g_zsa, context, 0, mod, g_mp);
+        RoutingPrep.SetupCellPorts(context, g_mp);
 
         return 1;
     }
@@ -164,6 +183,8 @@ public class Placer
             RoutingPrep.SetupCellPorts(context, mp);
         }
         g_mp = mp;
+        g_xsa = xsa;
+        g_zsa = zsa;
     }
 
     static void FixOverlapFinal(int[] xsol, int[] zsol)

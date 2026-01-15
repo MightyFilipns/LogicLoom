@@ -42,10 +42,10 @@ public class RoutingPrep
         w.setBlockState(p.add(0,2,0), Blocks.SLIME_BLOCK.getDefaultState());
         //w.setBlockState(p.add(0,2,1), Blocks.SLIME_BLOCK.getDefaultState());
         w.setBlockState(p.add(0,3,0), Blocks.REDSTONE_BLOCK.getDefaultState());
-        w.setBlockState(p.add(1,3,0), Blocks.OBSIDIAN.getDefaultState());
-        w.setBlockState(p.add(-1,3,0), Blocks.OBSIDIAN.getDefaultState());
-        w.setBlockState(p.add(1,4,0), Blocks.REDSTONE_WIRE.getDefaultState());
-        w.setBlockState(p.add(-1,4,0), Blocks.REDSTONE_WIRE.getDefaultState());
+       // w.setBlockState(p.add(1,3,0), Blocks.OBSIDIAN.getDefaultState());
+        //w.setBlockState(p.add(-1,3,0), Blocks.OBSIDIAN.getDefaultState());
+        //w.setBlockState(p.add(1,4,0), Blocks.REDSTONE_WIRE.getDefaultState());
+        //w.setBlockState(p.add(-1,4,0), Blocks.REDSTONE_WIRE.getDefaultState());
     }
 
     public static void BuildInput(BlockPos p, World w)

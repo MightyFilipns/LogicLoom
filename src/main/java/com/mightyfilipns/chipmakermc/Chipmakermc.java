@@ -37,7 +37,10 @@ public class Chipmakermc implements ModInitializer
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
             dispatcher.register(CommandManager.literal("chipmaker")
                     .then(CommandManager.literal("load_json").executes(JsonLoadCommand::LoadJSONDesign))
-                    .then(CommandManager.literal("place").then(CommandManager.argument("start_pos", BlockPosArgumentType.blockPos()).executes(Placer::PlaceDesign)))
+                    .then(CommandManager.literal("place")
+                            .then(CommandManager.argument("start_pos", BlockPosArgumentType.blockPos()).executes(Placer::PlaceDesign)))
+                    .then(CommandManager.literal("place_cache")
+                            .then(CommandManager.argument("start_pos", BlockPosArgumentType.blockPos()).executes(Placer::PlaceCache)))
                     .then(CommandManager.literal("param")
                             .then(CommandManager.literal("max_iter")
                                             .then(CommandManager.argument("max_iter", IntegerArgumentType.integer(0, 10_000)).executes(Chipmakermc::SetMaxIter))

@@ -28,6 +28,7 @@ public class Router
 
     static List<HyperGraphNet> cached_hy = null;
     static List<TwoPinNet> cached_tpn = null;
+    static List<HashSet<Pair<Integer, Integer>>> ocm = null;
 
     public static void DoRouting(CommandContext<ServerCommandSource> context, JsonDesign.DesignModule mod, Map<CellInfo, BlockPos> cellmap, Map<Integer, BlockPos> port_rel_pos)
     {
@@ -80,7 +81,7 @@ public class Router
             }
         }
 
-        int ypos = 0;
+        int starty = pos.getY() + 3;
 
         if(true)
         {
@@ -91,7 +92,7 @@ public class Router
                 System.out.println("Processing hypergraph " + (i + 1) + " of " + hy.size());
                 ObstacleFixer.FixObstaclesHyperGraph(hp, port_map, w);
                 System.out.println("Routing hypergraph " + (i + 1) + " of " + hy.size());
-                RouteHyperGraph(hp, 0, occupied_map);
+                RouteHyperGraph(hp, starty, occupied_map);
                 System.out.println("Building hypergraph " + (i + 1) + " of " + hy.size());
                 BuildHyperGraph(hp, w, hp.y_pos);
                 // ypos++;
@@ -103,11 +104,12 @@ public class Router
                 System.out.println("Processing two pin net " + (i + 1) + " of " + tpn.size());
                 FixObstacleTwoPinNet(twoPinNet, port_map);
                 System.out.println("Routing two pin net " + (i + 1) + " of " + tpn.size());
-                RouteTwoPinNet(twoPinNet, 0, occupied_map);
+                RouteTwoPinNet(twoPinNet, starty, occupied_map);
                 System.out.println("Building two pin net " + (i + 1) + " of " + tpn.size());
                 BuildTwoPinNet(twoPinNet, w, twoPinNet.y_pos);
                 i++;
             }
+            ocm = occupied_map;
 /*
             BlockState placebl = Blocks.BROWN_WOOL.getDefaultState();
             for (Map.Entry<Integer, List<AbstractCell>> integerListEntry : twopin)
@@ -205,8 +207,11 @@ public class Router
             {
                 occupied_map.get(iter_c).addAll(c);
             }
-            i++;
-            iter_c++;
+            else
+            {
+                i++;
+                iter_c++;
+            }
             if(iter_c > 300)
             {
                 throw new RuntimeException("RouteHyperGraph: max 300 DFS_Mark attempts exceeded");
@@ -300,8 +305,11 @@ public class Router
             {
                 occupied_map.get(iter_c).addAll(c);
             }
-            i++;
-            iter_c++;
+            else
+            {
+                i++;
+                iter_c++;
+            }
             if(iter_c > 300)
             {
                 throw new RuntimeException("RouteHyperGraph: max 300 DFS_Mark attempts exceeded");
@@ -470,7 +478,7 @@ public class Router
             return switch (pin_name) {
                 case "A" -> cell_pos.add(0, 0, 5);
                 case "B" -> cell_pos.add(2, 0, 5);
-                case "Y" -> cell_pos.add(0, 0, 0); //cell_pos.add(2, 0, 0); -- currently always set to the right side
+                case "Y" -> cell_pos.add(1, 0, 0); //cell_pos.add(2, 0, 0); -- currently always set to the right side
                 default -> throw new RuntimeException("Invalid pin name: " + pin_name);
             };
         }
