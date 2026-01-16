@@ -17,6 +17,7 @@ public class RoutingPrep
     public static void SetupCellPorts(CommandContext<ServerCommandSource> context, Map<CellInfo, BlockPos> cellmap)
     {
         var w = context.getSource().getWorld();
+        /*
         for (Map.Entry<CellInfo, BlockPos> entry : cellmap.entrySet())
         {
             var output = entry.getValue().add(1, 0, 0);
@@ -32,7 +33,7 @@ public class RoutingPrep
             {
                 BuildInput(in1, w);
             }
-        }
+        }*/
     }
 
     public static void BuildOutput(BlockPos p, World w)

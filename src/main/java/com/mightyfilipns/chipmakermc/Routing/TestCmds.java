@@ -126,4 +126,12 @@ public class TestCmds
         }*/
         return 1;
     }
+
+    public static int TestVerticalBuilder(CommandContext<ServerCommandSource> context)
+    {
+        BlockPos d = BlockPosArgumentType.getBlockPos(context, "down");
+        BlockPos p = BlockPosArgumentType.getBlockPos(context, "up");
+        VerticalBuilder.BuildDownwards(context.getSource().getWorld(), d, p, Router.ocm_wire, Placer.last_pos);
+        return 1;
+    }
 }

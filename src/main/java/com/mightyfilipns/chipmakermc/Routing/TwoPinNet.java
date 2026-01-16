@@ -1,5 +1,6 @@
 package com.mightyfilipns.chipmakermc.Routing;
 
+import com.mightyfilipns.chipmakermc.JsonDesign;
 import com.mightyfilipns.chipmakermc.JsonLoader.AbstractCell;
 import net.minecraft.util.math.BlockPos;
 
@@ -12,6 +13,7 @@ public class TwoPinNet
     public AbstractCell c2;
     public BlockPos p1;
     public BlockPos p2;
+    public JsonDesign.PortDirection p1dir;
 
     public List<List<Integer>> adj_list;
     public List<BlockPos> point_list;

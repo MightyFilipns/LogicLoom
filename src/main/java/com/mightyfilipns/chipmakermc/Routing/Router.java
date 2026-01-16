@@ -3,6 +3,7 @@ package com.mightyfilipns.chipmakermc.Routing;
 import com.mightyfilipns.chipmakermc.CellInfo;
 import com.mightyfilipns.chipmakermc.JsonDesign;
 import com.mightyfilipns.chipmakermc.JsonLoader.AbstractCell;
+import com.mightyfilipns.chipmakermc.Placer;
 import com.mojang.brigadier.context.CommandContext;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
@@ -29,6 +30,7 @@ public class Router
     static List<HyperGraphNet> cached_hy = null;
     static List<TwoPinNet> cached_tpn = null;
     static List<HashSet<Pair<Integer, Integer>>> ocm = null;
+    static List<HashSet<Pair<Integer, Integer>>> ocm_wire = null;
 
     public static void DoRouting(CommandContext<ServerCommandSource> context, JsonDesign.DesignModule mod, Map<CellInfo, BlockPos> cellmap, Map<Integer, BlockPos> port_rel_pos)
     {
@@ -83,67 +85,65 @@ public class Router
 
         int starty = pos.getY() + 3;
 
-        if(true)
+        int i = 0;
+        List<HashSet<Pair<Integer, Integer>>> occupied_map = new ArrayList<>();
+        List<HashSet<Pair<Integer, Integer>>> occupied_map_wire = new ArrayList<>();
+        for (HyperGraphNet hp : hy)
         {
-            int i =0;
-            List<HashSet<Pair<Integer, Integer>>> occupied_map = new ArrayList<>();
-            for (HyperGraphNet hp : hy)
-            {
-                System.out.println("Processing hypergraph " + (i + 1) + " of " + hy.size());
-                ObstacleFixer.FixObstaclesHyperGraph(hp, port_map, w);
-                System.out.println("Routing hypergraph " + (i + 1) + " of " + hy.size());
-                RouteHyperGraph(hp, starty, occupied_map);
-                System.out.println("Building hypergraph " + (i + 1) + " of " + hy.size());
-                BuildHyperGraph(hp, w, hp.y_pos);
-                // ypos++;
-                i++;
-            }
-            i = 0;
-            for (TwoPinNet twoPinNet : tpn)
-            {
-                System.out.println("Processing two pin net " + (i + 1) + " of " + tpn.size());
-                FixObstacleTwoPinNet(twoPinNet, port_map);
-                System.out.println("Routing two pin net " + (i + 1) + " of " + tpn.size());
-                RouteTwoPinNet(twoPinNet, starty, occupied_map);
-                System.out.println("Building two pin net " + (i + 1) + " of " + tpn.size());
-                BuildTwoPinNet(twoPinNet, w, twoPinNet.y_pos);
-                i++;
-            }
-            ocm = occupied_map;
-/*
-            BlockState placebl = Blocks.BROWN_WOOL.getDefaultState();
-            for (Map.Entry<Integer, List<AbstractCell>> integerListEntry : twopin)
-            {
-                if (ypos > w.getHeight())
-                    break;
-                var startpos = GetRelPos(cellmap, integerListEntry.getValue().get(0), integerListEntry.getKey(), port_rel_pos).withY(ypos);
-                var endpos = GetRelPos(cellmap, integerListEntry.getValue().get(1), integerListEntry.getKey(), port_rel_pos).withY(ypos);
-
-                var mid = new BlockPos(startpos.getX(), ypos, endpos.getZ());
-                for (BlockPos blockPos : BlockPos.iterate(startpos, mid))
-                {
-                    w.setBlockState(blockPos, placebl, 2 | 816);
-                }
-                for (BlockPos blockPos : BlockPos.iterate(mid, endpos))
-                {
-                    w.setBlockState(blockPos, placebl, 2 | 816);
-                }
-                ypos++;
-            }*/
+            System.out.println("Processing hypergraph " + (i + 1) + " of " + hy.size());
+            ObstacleFixer.FixObstaclesHyperGraph(hp, port_map, w);
+            System.out.println("Routing hypergraph " + (i + 1) + " of " + hy.size());
+            RouteHyperGraph(hp, 0, occupied_map, occupied_map_wire);
+            System.out.println("Building hypergraph " + (i + 1) + " of " + hy.size());
+            BuildHyperGraph(hp, w,  starty + hp.y_pos * 2);
+            // ypos++;
+            i++;
         }
-        else if(false)
+        i = 0;
+        for (TwoPinNet twoPinNet : tpn)
         {
-            var hp = hy.get(0);
-            BuildHyperGraph(hp, w, 0);
-            /*
-            for (Pair<BlockPos, Boolean> pinPo : hy.get(3).pin_pos)
+            System.out.println("Processing two pin net " + (i + 1) + " of " + tpn.size());
+            FixObstacleTwoPinNet(twoPinNet, port_map);
+            System.out.println("Routing two pin net " + (i + 1) + " of " + tpn.size());
+            RouteTwoPinNet(twoPinNet, 0, occupied_map, occupied_map_wire);
+            System.out.println("Building two pin net " + (i + 1) + " of " + tpn.size());
+            BuildTwoPinNet(twoPinNet, w, starty + twoPinNet.y_pos * 2);
+            i++;
+        }
+        System.out.println("Building hypergraph vertical connectors");
+        for (HyperGraphNet hyperGraphNet : hy)
+        {
+            for (int j = 0; j < hyperGraphNet.pin_port_pos.size(); j++)
             {
-                w.setBlockState(pinPo.getLeft().withY(0),pinPo.getRight() ? Blocks.YELLOW_WOOL.getDefaultState() : Blocks.BLUE_WOOL.getDefaultState());
-                // context.getSource().sendFeedback(() -> Text.literal("Pin or Steiner point at: " + pinPo.getLeft()), false);
+                BlockPos hn = hyperGraphNet.pin_port_pos.get(j);
+                if (j == hyperGraphNet.out_port_pos)
+                {
+                    VerticalBuilder.BuildUpwards(w, hn, hn.withY(starty + hyperGraphNet.y_pos * 2), occupied_map_wire, pos);
+                }
+                else
+                {
+                    VerticalBuilder.BuildDownwards(w, hn, hn.withY(starty + hyperGraphNet.y_pos * 2), occupied_map_wire, pos);
+                }
             }
-            */
+        }
+        System.out.println("Building two pin vertical connectors");
+        for (TwoPinNet tp : tpn)
+        {
+            if (tp.p1dir == JsonDesign.PortDirection.Input)
+            {
+                VerticalBuilder.BuildUpwards(w, tp.p2, tp.p2.withY(starty + tp.y_pos * 2), occupied_map_wire, pos);
+                VerticalBuilder.BuildDownwards(w, tp.p1, tp.p1.withY(starty + tp.y_pos * 2), occupied_map_wire, pos);
+            }
+            else
+            {
+                VerticalBuilder.BuildUpwards(w, tp.p1, tp.p1.withY(starty + tp.y_pos * 2), occupied_map_wire, pos);
+                VerticalBuilder.BuildDownwards(w, tp.p2, tp.p2.withY(starty + tp.y_pos * 2), occupied_map_wire, pos);
+            }
         }
 
+
+        ocm = occupied_map;
+        ocm_wire = occupied_map_wire;
         cached_hy = hy;
         cached_tpn = tpn;
     }
@@ -157,16 +157,17 @@ public class Router
         }
         var w = context.getSource().getWorld();
         int i = 0;
+        int starty = Placer.last_pos.getY() + 3;
         for (HyperGraphNet hp : cached_hy)
         {
             System.out.println("Building hypergraph " + (i + 1) + " of " + cached_hy.size());
-            BuildHyperGraph(hp, w, hp.y_pos);
+            BuildHyperGraph(hp, w, starty + hp.y_pos);
             i++;
         }
         for (TwoPinNet twoPinNet : cached_tpn)
         {
             System.out.println("Building two pin net " + (i + 1) + " of " + cached_tpn.size());
-            BuildTwoPinNet(twoPinNet, w, twoPinNet.y_pos);
+            BuildTwoPinNet(twoPinNet, w, starty + twoPinNet.y_pos);
             i++;
         }
     }
@@ -191,21 +192,26 @@ public class Router
         w.setBlockState(tpn.p2.withY(y), Blocks.ORANGE_WOOL.getDefaultState());
     }
 
-    private static void RouteTwoPinNet(TwoPinNet tpn, int start_y, List<HashSet<Pair<Integer, Integer>>> occupied_map)
+    private static void RouteTwoPinNet(TwoPinNet tpn, int start_y, List<HashSet<Pair<Integer, Integer>>> occupied_map, List<HashSet<Pair<Integer, Integer>>> occupied_map_route)
     {
         int i = start_y;
         boolean dfs_success = false;
         int iter_c = 0;
         do {
             if(occupied_map.size() >= iter_c)
+            {
                 occupied_map.add(new HashSet<>());
+                occupied_map_route.add(new HashSet<>());
+            }
 
             HashSet<Pair<Integer, Integer>> c = (HashSet<Pair<Integer, Integer>>) occupied_map.get(iter_c).clone();
+            HashSet<Pair<Integer, Integer>> d = (HashSet<Pair<Integer, Integer>>) occupied_map_route.get(iter_c).clone();
 
-            dfs_success = DFS_Mark_tpn(tpn, occupied_map.get(iter_c), c);
+            dfs_success = DFS_Mark_tpn(tpn, occupied_map.get(iter_c), c, d);
             if(dfs_success)
             {
                 occupied_map.get(iter_c).addAll(c);
+                occupied_map_route.get(iter_c).addAll(d);
             }
             else
             {
@@ -281,29 +287,35 @@ public class Router
             var p2 = GetRelPos(cellmap, integerListEntry.getValue().get(1), integerListEntry.getKey(), port_rel_pos);
             np.p1 = p1;
             np.p2 = p2;
+            np.p1dir = GetDir(integerListEntry.getValue().getFirst(), integerListEntry.getKey());
 
             tpn.add(np);
         }
         return tpn;
     }
 
-    private static void RouteHyperGraph(HyperGraphNet hyperGraphNet, int start_y, List<HashSet<Pair<Integer, Integer>>> occupied_map)
+    private static void RouteHyperGraph(HyperGraphNet hyperGraphNet, int start_y, List<HashSet<Pair<Integer, Integer>>> occupied_map, List<HashSet<Pair<Integer, Integer>>> occupied_map_route)
     {
         int i = start_y;
         boolean dfs_success = false;
         int iter_c = 0;
         do {
             if(occupied_map.size() >= iter_c)
+            {
                 occupied_map.add(new HashSet<>());
+                occupied_map_route.add(new HashSet<>());
+            }
 
             HashSet<Pair<Integer, Integer>> c = (HashSet<Pair<Integer, Integer>>) occupied_map.get(iter_c).clone();
+            HashSet<Pair<Integer, Integer>> d = (HashSet<Pair<Integer, Integer>>) occupied_map_route.get(iter_c).clone();
 
             boolean[] vm = new boolean[hyperGraphNet.all_points.size()];
 
-            dfs_success = DFS_Mark(hyperGraphNet, 0, -1, occupied_map.get(iter_c), 0, vm, c);
+            dfs_success = DFS_Mark(hyperGraphNet, 0, -1, occupied_map.get(iter_c), 0, vm, c, d);
             if(dfs_success)
             {
                 occupied_map.get(iter_c).addAll(c);
+                occupied_map_route.get(iter_c).addAll(d);
             }
             else
             {
@@ -319,7 +331,7 @@ public class Router
         hyperGraphNet.y_pos = i;
     }
 
-    private static boolean DFS_Mark(HyperGraphNet hp, int current, int v_before, HashSet<Pair<Integer, Integer>> occupied_map, int depth, boolean[] visited_map, HashSet<Pair<Integer, Integer>> oc2)
+    private static boolean DFS_Mark(HyperGraphNet hp, int current, int v_before, HashSet<Pair<Integer, Integer>> occupied_map, int depth, boolean[] visited_map, HashSet<Pair<Integer, Integer>> oc2, HashSet<Pair<Integer, Integer>> ocr)
     {
         if(depth > 500)
         {
@@ -341,17 +353,18 @@ public class Router
                 if(occupied_map.contains(np))
                     return false;
                 oc2.add(np);
+                ocr.add(np);
                 oc2.addAll(GetSurroundingPoints(np));
             }
 
-           if(!DFS_Mark(hp, integer, current, occupied_map, depth + 1, visited_map, oc2))
+           if(!DFS_Mark(hp, integer, current, occupied_map, depth + 1, visited_map, oc2, ocr))
                return false;
         }
 
         return true;
     }
 
-    private static boolean DFS_Mark_tpn(TwoPinNet tpn, HashSet<Pair<Integer, Integer>> occupied_map, HashSet<Pair<Integer, Integer>> oc2)
+    private static boolean DFS_Mark_tpn(TwoPinNet tpn, HashSet<Pair<Integer, Integer>> occupied_map, HashSet<Pair<Integer, Integer>> oc2, HashSet<Pair<Integer, Integer>> ocr)
     {
         for (int i = 1; i < tpn.point_list.size(); i++)
         {
@@ -363,6 +376,7 @@ public class Router
                 if(occupied_map.contains(np))
                     return false;
                 oc2.add(np);
+                ocr.add(np);
                 oc2.addAll(GetSurroundingPoints(np));
             }
         }
@@ -429,10 +443,17 @@ public class Router
         for (Map.Entry<Integer, List<AbstractCell>> integerListEntry : h)
         {
             List<BlockPos> rel_block_pos = new ArrayList<>();
+            int out_index = -1;
             for (AbstractCell abstractCell : integerListEntry.getValue())
             {
                 rel_block_pos.add(GetRelPos(cellmap, abstractCell, integerListEntry.getKey(), port_rel_pos));
+                if (GetDir(abstractCell, integerListEntry.getKey()) == JsonDesign.PortDirection.Output)
+                {
+                    out_index = rel_block_pos.size() - 1;
+                }
             }
+            if (out_index == -1)
+                throw  new RuntimeException("Failed to find output");
 
             // List<List<Integer>> adj = new ArrayList<>();
 
@@ -443,7 +464,7 @@ public class Router
 
             // var d = FindMinimumSteinerRectilinearTree(rel_block_pos, adj);
 
-            ret.add(new HyperGraphNet(integerListEntry.getKey(), treerez, integerListEntry.getValue(), rel_block_pos));
+            ret.add(new HyperGraphNet(integerListEntry.getKey(), treerez, integerListEntry.getValue(), rel_block_pos, out_index));
         }
         return ret;
     }
@@ -486,6 +507,38 @@ public class Router
         {
             // TODO: fix
             return port_rel_pos.get(conn);
+        }
+        else
+        {
+            throw new RuntimeException("unimplemented abstract cell");
+        }
+    }
+
+    public static JsonDesign.PortDirection GetDir(AbstractCell a, Integer conn)
+    {
+        if(a instanceof CellInfo b)
+        {
+            String pin_name = "";
+            for (Map.Entry<String, List<Integer>> stringListEntry : b.connections.entrySet())
+            {
+                for (Integer i : stringListEntry.getValue())
+                {
+                    if(Objects.equals(conn, i))
+                    {
+                        pin_name = stringListEntry.getKey();
+                        break;
+                    }
+                }
+            }
+            return switch (pin_name) {
+                case "A", "B" -> JsonDesign.PortDirection.Input;
+                case "Y" -> JsonDesign.PortDirection.Output;
+                default -> throw new RuntimeException("Invalid pin name: " + pin_name);
+            };
+        }
+        else if(a instanceof JsonDesign.DesignPortInfo p)
+        {
+            return p.direction == JsonDesign.PortDirection.Input ? JsonDesign.PortDirection.Output : JsonDesign.PortDirection.Input;
         }
         else
         {

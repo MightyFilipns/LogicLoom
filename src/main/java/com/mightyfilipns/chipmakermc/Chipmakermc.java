@@ -74,6 +74,10 @@ public class Chipmakermc implements ModInitializer
                             .then(CommandManager.literal("test_hyper").then(CommandManager.argument("start_pos", BlockPosArgumentType.blockPos()).executes(TestCmds::TestHyperGraph)))
                             .then(CommandManager.literal("test_lee_router").executes(TestCmds::TestLeeRouter))
                             .then(CommandManager.literal("rebuild_cached").executes(TestCmds::RebuildCached))
+                            .then(CommandManager.literal("test_vert")
+                                    .then(CommandManager.argument("up", BlockPosArgumentType.blockPos())
+                                    .then(CommandManager.argument("down", BlockPosArgumentType.blockPos())
+                                    .executes(TestCmds::TestVerticalBuilder))))
                     )
             );
             ResourceLoader.get(ResourceType.SERVER_DATA).registerReloader(

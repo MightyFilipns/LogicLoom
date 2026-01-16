@@ -28,7 +28,7 @@ public class Placer
     public static int max_iter = 140;
     public static int chip_size = 70;
 
-    static BlockPos last_pos = new BlockPos(74, -12, -189);
+    public static BlockPos last_pos = new BlockPos(74, -12, -189);
 
     public static boolean do_vertical = false;
     public static boolean do_overlap_fix_final = true;
