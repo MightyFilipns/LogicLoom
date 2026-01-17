@@ -131,7 +131,8 @@ public class TestCmds
     {
         BlockPos d = BlockPosArgumentType.getBlockPos(context, "down");
         BlockPos p = BlockPosArgumentType.getBlockPos(context, "up");
-        VerticalBuilder.BuildDownwards(context.getSource().getWorld(), d, p, Router.ocm_wire, Placer.last_pos);
+        List<BlockPos> m = new ArrayList<>();
+        VerticalBuilder.BuildDownwards(context.getSource().getWorld(), d, p, Router.ocm_wire, Placer.last_pos, m);
         return 1;
     }
 }

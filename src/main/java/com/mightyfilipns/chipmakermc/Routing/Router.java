@@ -31,6 +31,9 @@ public class Router
     static List<TwoPinNet> cached_tpn = null;
     static List<HashSet<Pair<Integer, Integer>>> ocm = null;
     static List<HashSet<Pair<Integer, Integer>>> ocm_wire = null;
+    static List<BlockPos> g_rep_map = null;
+
+    public static int max_y = 0;
 
     public static void DoRouting(CommandContext<ServerCommandSource> context, JsonDesign.DesignModule mod, Map<CellInfo, BlockPos> cellmap, Map<Integer, BlockPos> port_rel_pos)
     {
@@ -88,6 +91,12 @@ public class Router
         int i = 0;
         List<HashSet<Pair<Integer, Integer>>> occupied_map = new ArrayList<>();
         List<HashSet<Pair<Integer, Integer>>> occupied_map_wire = new ArrayList<>();
+        List<BlockPos> rep_map = new ArrayList<>();
+        g_rep_map = rep_map;
+        ocm = occupied_map;
+        ocm_wire = occupied_map_wire;
+        cached_hy = hy;
+        cached_tpn = tpn;
         for (HyperGraphNet hp : hy)
         {
             System.out.println("Processing hypergraph " + (i + 1) + " of " + hy.size());
@@ -118,11 +127,11 @@ public class Router
                 BlockPos hn = hyperGraphNet.pin_port_pos.get(j);
                 if (j == hyperGraphNet.out_port_pos)
                 {
-                    VerticalBuilder.BuildUpwards(w, hn, hn.withY(starty + hyperGraphNet.y_pos * 2), occupied_map_wire, pos);
+                    VerticalBuilder.BuildUpwards(w, hn, hn.withY(starty + hyperGraphNet.y_pos * 2), occupied_map_wire, pos, rep_map);
                 }
                 else
                 {
-                    VerticalBuilder.BuildDownwards(w, hn, hn.withY(starty + hyperGraphNet.y_pos * 2), occupied_map_wire, pos);
+                    VerticalBuilder.BuildDownwards(w, hn, hn.withY(starty + hyperGraphNet.y_pos * 2), occupied_map_wire, pos, rep_map);
                 }
             }
         }
@@ -131,21 +140,26 @@ public class Router
         {
             if (tp.p1dir == JsonDesign.PortDirection.Input)
             {
-                VerticalBuilder.BuildUpwards(w, tp.p2, tp.p2.withY(starty + tp.y_pos * 2), occupied_map_wire, pos);
-                VerticalBuilder.BuildDownwards(w, tp.p1, tp.p1.withY(starty + tp.y_pos * 2), occupied_map_wire, pos);
+                VerticalBuilder.BuildUpwards(w, tp.p2, tp.p2.withY(starty + tp.y_pos * 2), occupied_map_wire, pos, rep_map);
+                VerticalBuilder.BuildDownwards(w, tp.p1, tp.p1.withY(starty + tp.y_pos * 2), occupied_map_wire, pos, rep_map);
             }
             else
             {
-                VerticalBuilder.BuildUpwards(w, tp.p1, tp.p1.withY(starty + tp.y_pos * 2), occupied_map_wire, pos);
-                VerticalBuilder.BuildDownwards(w, tp.p2, tp.p2.withY(starty + tp.y_pos * 2), occupied_map_wire, pos);
+                VerticalBuilder.BuildUpwards(w, tp.p1, tp.p1.withY(starty + tp.y_pos * 2), occupied_map_wire, pos, rep_map);
+                VerticalBuilder.BuildDownwards(w, tp.p2, tp.p2.withY(starty + tp.y_pos * 2), occupied_map_wire, pos, rep_map);
             }
         }
 
+        for (BlockPos blockPos : rep_map)
+        {
+            // some entries may be, invalid ignore them
+            if (w.getBlockState(blockPos).isAir())
+            {
+                w.setBlockState(blockPos, Blocks.PURPLE_WOOL.getDefaultState());
+            }
+        }
 
-        ocm = occupied_map;
-        ocm_wire = occupied_map_wire;
-        cached_hy = hy;
-        cached_tpn = tpn;
+        max_y = starty + occupied_map_wire.size() * 2;
     }
 
     public static void RebuildCache(CommandContext<ServerCommandSource> context)

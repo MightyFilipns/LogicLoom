@@ -5,6 +5,7 @@ import com.mightyfilipns.chipmakermc.Routing.RoutingPrep;
 import com.mojang.brigadier.context.CommandContext;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
+import net.minecraft.block.SignBlock;
 import net.minecraft.block.entity.SignBlockEntity;
 import net.minecraft.block.entity.SignText;
 import net.minecraft.command.argument.BlockPosArgumentType;
@@ -100,9 +101,9 @@ public class Placer
                 int x = x_counter * 3;
                 int xworldpos = x_counter * X_CELL_SIZE;
                 var npos = pos.add(xworldpos,0,z);
-                w.setBlockState(npos, Blocks.RED_WOOL.getDefaultState());
-                w.setBlockState(npos.add(0,1,0), Blocks.OAK_SIGN.getDefaultState());
-                ((SignBlockEntity)w.getBlockEntity(npos.add(0,1,0))).setText(new SignText().withMessage(1, Text.of(String.format("%s - %d", value.getKey(), bit))), true);
+                w.setBlockState(npos.add(0, 0, -1), Blocks.RED_WOOL.getDefaultState());
+                w.setBlockState(npos.add(0, 1, -1), Blocks.OAK_SIGN.getDefaultState().with(SignBlock.ROTATION, 8));
+                ((SignBlockEntity)w.getBlockEntity(npos.add(0,1,-1))).setText(new SignText().withMessage(1, Text.of(String.format("%s - %d", value.getKey(), bit))), true);
                 var conn = pr.getMiddle().get(bit).stream().mapToInt(a -> a.cell_ID).toArray();
                 rel_port_pos.put(bit, npos);
                 for (int i : conn)
