@@ -149,7 +149,19 @@ public class Router
                 VerticalBuilder.BuildDownwards(w, tp.p2, tp.p2.withY(starty + tp.y_pos * 2), occupied_map_wire, pos, rep_map);
             }
         }
+        System.out.println("Building hypergraph net wires");
+        for (HyperGraphNet hyperGraphNet : hy)
+        {
+            RedstoneWireBuilder.FixHypergraphAdjList(0, hyperGraphNet);
+            RedstoneWireBuilder.BuildHypergraph(w, hyperGraphNet, rep_map, starty);
+        }
+        System.out.println("Building two pin net wires");
+        for (TwoPinNet twoPinNet : tpn)
+        {
+            RedstoneWireBuilder.BuildTwoPin(w, twoPinNet, rep_map, starty);
+        }
 
+        /*
         for (BlockPos blockPos : rep_map)
         {
             // some entries may be, invalid ignore them
@@ -157,7 +169,7 @@ public class Router
             {
                 w.setBlockState(blockPos, Blocks.PURPLE_WOOL.getDefaultState());
             }
-        }
+        }*/
 
         max_y = starty + occupied_map_wire.size() * 2;
     }

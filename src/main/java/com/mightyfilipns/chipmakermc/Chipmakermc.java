@@ -78,24 +78,29 @@ public class Chipmakermc implements ModInitializer
                                     .then(CommandManager.argument("up", BlockPosArgumentType.blockPos())
                                     .then(CommandManager.argument("down", BlockPosArgumentType.blockPos())
                                     .executes(TestCmds::TestVerticalBuilder))))
+                            .then(CommandManager.literal("test_wire")
+                                    .then(CommandManager.argument("index", IntegerArgumentType.integer(0))
+                                    .executes(TestCmds::BuildWire)))
                     )
             );
-            ResourceLoader.get(ResourceType.SERVER_DATA).registerReloader(
-                    Identifier.of("mcchipmaker", "chpi_maker_res"),
-                    (SynchronousResourceReloader) manager -> {
-                        var dat2 = manager.getResource(Identifier.of("mcchipmaker:flute_data/post9.dat"));
-                        var dat1 = manager.getResource(Identifier.of("mcchipmaker:flute_data/powv9.dat"));
-
-
-                        try {
-                            Router.SetupFlute(dat1.get().getInputStream(), dat2.get().getInputStream());
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
-                    }
-            );
         });
+
+        ResourceLoader.get(ResourceType.SERVER_DATA).registerReloader(
+            Identifier.of("mcchipmaker", "chpi_maker_res"),
+            (SynchronousResourceReloader) manager -> {
+                var dat2 = manager.getResource(Identifier.of("mcchipmaker:flute_data/post9.dat"));
+                var dat1 = manager.getResource(Identifier.of("mcchipmaker:flute_data/powv9.dat"));
+
+
+                try {
+                    Router.SetupFlute(dat1.get().getInputStream(), dat2.get().getInputStream());
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        );
     }
+
 
     public static int Wipe(CommandContext<ServerCommandSource> context)
     {
@@ -109,14 +114,21 @@ public class Chipmakermc implements ModInitializer
         }
         else if(Placer.do_actual_place)
         {
-            maxy = Placer.Y_CELL_SIZE;
+            if(Router.max_y != 0)
+            {
+                maxy = Router.max_y;
+            }
+            else
+            {
+                maxy = Placer.Y_CELL_SIZE;
+            }
         }
         else
         {
             maxy = 1;
         }
 
-        for (BlockPos blockPos : BlockPos.iterate(Placer.last_pos.add(maxx, maxy, maxz), Placer.last_pos))
+        for (BlockPos blockPos : BlockPos.iterate(Placer.last_pos.add(maxx, maxy, maxz), Placer.last_pos.add(0, 0, -1)))
         {
             context.getSource().getWorld().setBlockState(blockPos, Blocks.AIR.getDefaultState(), 2 | 816);
         }

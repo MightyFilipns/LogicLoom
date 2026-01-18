@@ -3,6 +3,7 @@ package com.mightyfilipns.chipmakermc.Routing;
 import com.mightyfilipns.chipmakermc.Chipmakermc;
 import com.mightyfilipns.chipmakermc.JsonDesign;
 import com.mightyfilipns.chipmakermc.Placer;
+import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import net.minecraft.block.Blocks;
 import net.minecraft.command.argument.BlockPosArgumentType;
@@ -84,6 +85,17 @@ public class TestCmds
     public static int RebuildCached(CommandContext<ServerCommandSource> context)
     {
         Router.RebuildCache(context);
+        return 1;
+    }
+
+    public static int BuildWire(CommandContext<ServerCommandSource> context)
+    {
+        int index = IntegerArgumentType.getInteger(context, "index");
+        HyperGraphNet h = Router.cached_hy.get(index);
+        RedstoneWireBuilder.FixHypergraphAdjList(0, h);
+        RedstoneWireBuilder.BuildHypergraph(context.getSource().getWorld(), h, Router.g_rep_map, Placer.last_pos.getY() + 3);
+        //TwoPinNet tpn = Router.cached_tpn.get(index);
+        //RedstoneWireBuilder.BuildTwoPin(context.getSource().getWorld(), tpn, Router.g_rep_map, Placer.last_pos.getY() + 3);
         return 1;
     }
 

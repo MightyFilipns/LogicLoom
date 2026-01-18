@@ -101,7 +101,7 @@ public class Placer
                 int x = x_counter * 3;
                 int xworldpos = x_counter * X_CELL_SIZE;
                 var npos = pos.add(xworldpos,0,z);
-                w.setBlockState(npos.add(0, 0, -1), Blocks.RED_WOOL.getDefaultState());
+                w.setBlockState(npos.add(0, 0, -1),value.getValue().direction == JsonDesign.PortDirection.Input ?  Blocks.RED_WOOL.getDefaultState() : Blocks.REDSTONE_LAMP.getDefaultState());
                 w.setBlockState(npos.add(0, 1, -1), Blocks.OAK_SIGN.getDefaultState().with(SignBlock.ROTATION, 8));
                 ((SignBlockEntity)w.getBlockEntity(npos.add(0,1,-1))).setText(new SignText().withMessage(1, Text.of(String.format("%s - %d", value.getKey(), bit))), true);
                 var conn = pr.getMiddle().get(bit).stream().mapToInt(a -> a.cell_ID).toArray();

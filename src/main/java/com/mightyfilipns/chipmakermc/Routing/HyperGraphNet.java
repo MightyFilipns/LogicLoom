@@ -5,7 +5,7 @@ import net.minecraft.util.math.BlockPos;
 
 import java.util.List;
 
-class HyperGraphNet {
+public class HyperGraphNet {
     public Integer net_id;
     public Flute.Tree tree;
     public List<AbstractCell> cells;

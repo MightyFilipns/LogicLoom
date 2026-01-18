@@ -261,7 +261,7 @@ public class VerticalBuilder
                         }
                         /// Blindly move the previous piston on block up. Could cause interference with nearby wires
                         /// However its very unlikely that this code get triggered and that piston causes problems so we ignore this problem for now
-                        /// TODO: fix
+                        // TODO: fix
                         piston_pos.set(piston_pos.size() - 1, piston_pos.getLast() - 1);
                     }
                     else
