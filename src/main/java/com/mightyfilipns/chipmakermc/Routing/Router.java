@@ -171,7 +171,7 @@ public class Router
             }
         }*/
 
-        max_y = starty + occupied_map_wire.size() * 2;
+        max_y = starty + occupied_map_wire.size() * 2 + 1;
     }
 
     public static void RebuildCache(CommandContext<ServerCommandSource> context)
@@ -282,7 +282,7 @@ public class Router
             blks.add(fmid);
             blks.add(p2);
             tpn.adj_list = adjl;
-            tpn.point_list = blks;
+            tpn.point_list = tpn.p1dir == JsonDesign.PortDirection.Output ? blks : blks.reversed();
         }
         else
         {
@@ -295,7 +295,7 @@ public class Router
                 adjl.add(new ArrayList<>());
                 ConnBranches(adjl, i - 1, i);
             }
-            tpn.point_list = blks;
+            tpn.point_list = tpn.p1dir == JsonDesign.PortDirection.Output ? blks.reversed() : blks;
             tpn.adj_list = adjl;
         }
 

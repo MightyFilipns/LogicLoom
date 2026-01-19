@@ -14,6 +14,7 @@ public class HyperGraphNet {
     List<BlockPos> all_points;
     int y_pos;
     int out_port_pos;
+    int allpoints_pos;
 
     public HyperGraphNet(Integer net_id, Flute.Tree tree, List<AbstractCell> cells, List<BlockPos> pin_port_pos, int out_port_pos) {
         this.net_id = net_id;

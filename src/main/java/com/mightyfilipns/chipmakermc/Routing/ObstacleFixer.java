@@ -93,6 +93,8 @@ public class ObstacleFixer
             ConnBranches(adj_list, si, mi);
             ConnBranches(adj_list, mi, ei);
         }
+        hp.allpoints_pos = all_points.indexOf(hp.pin_port_pos.get(hp.out_port_pos).withY(0));
+
         hp.SetAdjList(adj_list, all_points);
         port_map.addAll(hp.pin_port_pos.stream().map(a -> Pair.of(a.getX(), a.getZ())).toList());
     }

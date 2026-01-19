@@ -18,7 +18,8 @@ public class RedstoneWireBuilder
     {
         int real_y = start_y + h.y_pos * 2;
         boolean[] visited = new boolean[h.adj_list.size()];
-        DFS_build(h.out_port_pos, w, h, rep_map, real_y, visited);
+        visited[h.allpoints_pos] = true;
+        DFS_build(h.allpoints_pos, w, h, rep_map, real_y, visited);
     }
 
     public static void FixHypergraphAdjList(int i, HyperGraphNet h)
@@ -130,12 +131,12 @@ public class RedstoneWireBuilder
             visited[integer] = true;
 
             var p2 = h.all_points.get(integer);
-            var pr = p1.subtract(p2);
+            var pr = p2.subtract(p1);
 
             var absx = Math.abs(pr.getX());
             var absz = Math.abs(pr.getZ());
             var nor = new BlockPos(Integer.signum(pr.getX()), 0, Integer.signum(pr.getZ()));
-            Direction dir = Direction.fromVector(nor, Direction.UP); // Intentionally invalid fall back
+            Direction dir = Direction.fromVector(nor, Direction.UP).getOpposite(); // Intentionally invalid fall back
             // It appears that sometimes that Lee algorithm that route if obstacles are found will put Steiner point in the path of other branches in the same tree causing problems
             boolean on_x = absz != 0;
             List<BlockPos> g = null;
@@ -164,10 +165,22 @@ public class RedstoneWireBuilder
                 }
                 else
                 {
-                    var repp1 = p1.withY(real_y + 1).subtract(nor);
-                    var repp2 = p2.withY(real_y + 1).add(nor);
+                    var repp1 = p1.withY(real_y + 1).add(nor);
+                    var repp2 = p2.withY(real_y + 1).subtract(nor);
 
                     int i2 = 0;
+
+                    w.setBlockState(repp1, Blocks.REPEATER.getDefaultState().with(HorizontalFacingBlock.FACING, dir));
+                    if(h.allpoints_pos != i)
+                    {
+                        w.setBlockState(p1.withY(real_y + 1), Blocks.REDSTONE_WIRE.getDefaultState());
+                    }
+                    if(h.allpoints_pos != integer)
+                    {
+                        w.setBlockState(p2.withY(real_y + 1), Blocks.REDSTONE_WIRE.getDefaultState());
+                    }
+                    w.setBlockState(repp2, Blocks.REPEATER.getDefaultState().with(HorizontalFacingBlock.FACING, dir));
+
                     if(absx == 0)
                     {
                         for (int j = Math.min(repp1.getZ(), repp2.getZ()); j < Math.max(repp2.getZ(), repp1.getZ()); j++)
@@ -203,16 +216,6 @@ public class RedstoneWireBuilder
                             w.setBlockState(new BlockPos(j, repp1.getY(), repp1.getZ()), Blocks.REPEATER.getDefaultState().with(HorizontalFacingBlock.FACING, dir));
                         }
                     }
-                    w.setBlockState(repp1, Blocks.REPEATER.getDefaultState().with(HorizontalFacingBlock.FACING, dir));
-                    if(h.out_port_pos != i)
-                    {
-                        w.setBlockState(p1.withY(real_y + 1), Blocks.REDSTONE_WIRE.getDefaultState());
-                    }
-                    if(h.out_port_pos != integer)
-                    {
-                        w.setBlockState(p2.withY(real_y + 1), Blocks.REDSTONE_WIRE.getDefaultState());
-                    }
-                    w.setBlockState(repp2, Blocks.REPEATER.getDefaultState().with(HorizontalFacingBlock.FACING, dir));
                 }
                 DFS_build(integer, w, h, rep_map, real_y, visited);
             }
@@ -236,7 +239,7 @@ public class RedstoneWireBuilder
             var absx = Math.abs(pr.getX());
             var absz = Math.abs(pr.getZ());
             var nor = new BlockPos(Integer.signum(pr.getX()), 0, Integer.signum(pr.getZ()));
-            Direction dir = Direction.fromVector(nor, Direction.UP); // Intentionally invalid fall back
+            Direction dir = Direction.fromVector(nor, Direction.UP).getOpposite(); // Intentionally invalid fall back
             // It appears that sometimes that Lee algorithm that route if obstacles are found will put Steiner point in the path of other branches in the same tree causing problems
             boolean on_x = absz != 0;
             List<BlockPos> rep = null;
@@ -301,8 +304,11 @@ public class RedstoneWireBuilder
                     }
                 }
                 w.setBlockState(repp1, Blocks.REPEATER.getDefaultState().with(HorizontalFacingBlock.FACING, dir));
+                if(i != 1)
+                {
+                    w.setBlockState(p2.withY(real_y + 1), Blocks.REDSTONE_WIRE.getDefaultState());
+                }
                 w.setBlockState(p1.withY(real_y + 1), Blocks.REDSTONE_WIRE.getDefaultState());
-                w.setBlockState(p2.withY(real_y + 1), Blocks.REDSTONE_WIRE.getDefaultState());
                 w.setBlockState(repp2, Blocks.REPEATER.getDefaultState().with(HorizontalFacingBlock.FACING, dir));
             }
 
