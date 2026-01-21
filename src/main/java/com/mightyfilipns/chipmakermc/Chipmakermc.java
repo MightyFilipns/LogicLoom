@@ -116,7 +116,7 @@ public class Chipmakermc implements ModInitializer
         {
             if(Router.max_y != 0)
             {
-                maxy = Router.max_y;
+                maxy = Router.max_y - Placer.last_pos.getY();
             }
             else
             {

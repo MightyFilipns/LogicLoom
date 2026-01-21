@@ -21,23 +21,15 @@ public class VerticalBuilder
         int sanity_check = 0;
         for (int i = down.getY(); i <= upper.getY() - 2; i += 14)
         {
-            var v = ValidPosForBlock(i - 2, y, down, occupied_map);
-            while(!v)
-            {
-                i -= 2;
-                v = ValidPosForBlock(i - 2, y, down, occupied_map);
-                sanity_check++;
-                if(i + 2 < down.getY() || sanity_check > 2000)
-                {
-                    throw new RuntimeException("Failed to build upwards connector at: " + down);
-                }
-            }
-            piston_pos.add(i);
-            System.out.println("valid: " + v + " i: " + i);
+            var p = PistonPosFinderUpwards(i, y, down, occupied_map, rep_map, sanity_check, piston_pos);
+            i = p.getLeft();
+            sanity_check = p.getRight();
         }
+
         if(upper.getY() - piston_pos.getLast() > 12)
         {
-            piston_pos.add(upper.getY() - 2);
+            int i = upper.getY() - 2;
+            var p = PistonPosFinderUpwards(i, y, down, occupied_map, rep_map, sanity_check, piston_pos);
         }
 
         for (Integer pistonPo : piston_pos)
@@ -51,18 +43,18 @@ public class VerticalBuilder
             var y2 = piston_pos.get(i) - 3;
             for (BlockPos blockPos : BlockPos.iterate(down.withY(y1), down.withY(y2)))
             {
-                w.setBlockState(blockPos, Blocks.SLIME_BLOCK.getDefaultState());
+               w.setBlockState(blockPos, Blocks.SLIME_BLOCK.getDefaultState(), 2 | 816);
             }
-            w.setBlockState(down.withY(piston_pos.get(i) - 2), Blocks.REDSTONE_BLOCK.getDefaultState());
+            w.setBlockState(down.withY(piston_pos.get(i) - 2), Blocks.REDSTONE_BLOCK.getDefaultState(), 2 | 816);
         }
 
         var p1 = down.withY(piston_pos.getLast() + 1);
         var p2 = upper.add(0, -1,0);
         for (BlockPos blockPos : BlockPos.iterate(p1, p2))
         {
-            w.setBlockState(blockPos, Blocks.SLIME_BLOCK.getDefaultState());
+            w.setBlockState(blockPos, Blocks.SLIME_BLOCK.getDefaultState(), 2 | 816);
         }
-        w.setBlockState(upper, Blocks.REDSTONE_BLOCK.getDefaultState());
+        w.setBlockState(upper, Blocks.REDSTONE_BLOCK.getDefaultState(), 2 | 816);
         for (int i = y; i <= upper.getY(); i += 2)
         {
             var ps = LeeRouter.GetSurroundingPoints(Pair.of(down.getX(), down.getZ()));
@@ -77,10 +69,78 @@ public class VerticalBuilder
                 var p = new BlockPos(a.getLeft(), i, a.getRight());
                 if (!w.getBlockState(p).isAir())
                 {
-                    w.setBlockState(p, Blocks.OBSIDIAN.getDefaultState());
+                    w.setBlockState(p, Blocks.OBSIDIAN.getDefaultState(), 2 | 816);
                 }
             }
         }
+    }
+
+    public static Pair<Integer, Integer> PistonPosFinderUpwards(int i, int y, BlockPos down, List<HashSet<Pair<Integer, Integer>>> occupied_map, List<BlockPos> rep_map, int sanity_check, List<Integer> piston_pos)
+    {
+        var v = CheckDownwardsRedstonePos(i - 2, y, down, occupied_map);
+        v &= CheckDownwardsRedstonePos(i + 1, y, down, occupied_map);
+        v &= CheckDownwardsRedstonePos(i + 2, y, down, occupied_map);
+        v &= CheckDownwardsRedstonePos(i - 1, y, down, occupied_map);
+        boolean do_rep_res = false;
+        while(!v)
+        {
+            i -= 1;
+            var v1 = CheckDownwardsRedstonePos(i - 2, y, down, occupied_map);
+            var v2 = CheckDownwardsRedstonePos(i + 1, y, down, occupied_map);
+            var v3 = CheckDownwardsRedstonePos(i + 2, y, down, occupied_map);
+            var v4 = CheckDownwardsRedstonePos(i - 1, y, down, occupied_map);
+            v = v1 & v2 & v3 & v4;
+            sanity_check++;
+
+            if(do_rep_res)
+            {
+                List<BlockPos> tm = new ArrayList<>();
+                if (!v1)
+                    v1 = ReserveRepeater(i - 2, y, down, occupied_map, tm);
+                if (!v2)
+                    v2 = ReserveRepeater(i + 1, y, down, occupied_map, tm);
+                if (!v3)
+                    v3 = ReserveRepeater(i + 2, y, down, occupied_map, tm);
+                if (!v4)
+                    v4 = ReserveRepeater(i - 1, y, down, occupied_map, tm);
+
+                v = v1 & v2 & v3 & v4;
+                if(v)
+                {
+                    if(i - 2 <= piston_pos.getLast())
+                    {
+                        if(piston_pos.size() == 1)
+                        {
+                            throw new RuntimeException("Failed to build downwards connector at: " + down + " Could not find position for piston");
+                        }
+                        /// Blindly move the previous piston on block up. Could cause interference with nearby wires
+                        /// However its very unlikely that this code get triggered and that piston causes problems so we ignore this problem for now
+                        // TODO: fix
+                        piston_pos.set(piston_pos.size() - 1, piston_pos.getLast() + 1);
+                    }
+                    else
+                    {
+                        rep_map.addAll(tm);
+                        do_rep_res = false;
+                    }
+                }
+            }
+
+            if(i - 2 <= piston_pos.getLast())
+            {
+                do_rep_res = true;
+                v = false;
+                i = piston_pos.getLast() + 10;
+            }
+
+            if(sanity_check > 2000)
+            {
+                throw new RuntimeException("Failed to build upwards connector at: " + down);
+            }
+        }
+        piston_pos.add(i);
+        System.out.println("valid: " + v + " i: " + i);
+        return Pair.of(i, sanity_check);
     }
 
     public static void BuildDownwards(ServerWorld w, BlockPos down, BlockPos upper, List<HashSet<Pair<Integer, Integer>>> occupied_map, BlockPos start, List<BlockPos> rep_map)
@@ -170,7 +230,7 @@ public class VerticalBuilder
 
         for (Integer pistonPo : piston_pos)
         {
-            w.setBlockState(down.withY(pistonPo), Blocks.STICKY_PISTON.getDefaultState().with(FacingBlock.FACING, Direction.DOWN));
+            w.setBlockState(down.withY(pistonPo), Blocks.STICKY_PISTON.getDefaultState().with(FacingBlock.FACING, Direction.DOWN), 2 | 816);
         }
 
         var srrp = LeeRouter.GetSurroundingPoints(Pair.of(down.getX(), down.getZ()));
@@ -181,7 +241,7 @@ public class VerticalBuilder
             {
                 if(!w.getBlockState(blockPos.add(0, -1, 0)).isAir())
                 {
-                    w.setBlockState(blockPos.add(0,1,0), Blocks.OBSIDIAN.getDefaultState());
+                    w.setBlockState(blockPos.add(0,1,0), Blocks.OBSIDIAN.getDefaultState(), 2 | 816);
                 }
             }
         }
@@ -194,8 +254,8 @@ public class VerticalBuilder
             {
                 w.setBlockState(blockPos, Blocks.SLIME_BLOCK.getDefaultState(), 2 | 816);
             }
-            w.setBlockState(down.withY(piston_pos.get(i) + 1), Blocks.REDSTONE_WIRE.getDefaultState());
-            w.setBlockState(down.withY(piston_pos.get(i) + 3), Blocks.REDSTONE_BLOCK.getDefaultState());
+            w.setBlockState(down.withY(piston_pos.get(i) + 1), Blocks.REDSTONE_WIRE.getDefaultState(), 2 | 816);
+            w.setBlockState(down.withY(piston_pos.get(i) + 3), Blocks.REDSTONE_BLOCK.getDefaultState(), 2 | 816);
         }
 
         var p1 = down.withY(piston_pos.getLast() - 1);
@@ -204,7 +264,7 @@ public class VerticalBuilder
         {
             w.setBlockState(blockPos, Blocks.SLIME_BLOCK.getDefaultState(), 2 | 816);
         }
-        w.setBlockState(down.add(0, 1, 0), Blocks.REDSTONE_BLOCK.getDefaultState());
+        w.setBlockState(down.add(0, 1, 0), Blocks.REDSTONE_BLOCK.getDefaultState(), 2 | 816);
 
         for (int i = y; i <= upper.getY(); i += 2)
         {
@@ -220,7 +280,7 @@ public class VerticalBuilder
                 var p = new BlockPos(a.getLeft(), i, a.getRight());
                 if (!w.getBlockState(p).isAir())
                 {
-                    w.setBlockState(p, Blocks.OBSIDIAN.getDefaultState());
+                    w.setBlockState(p, Blocks.OBSIDIAN.getDefaultState(), 2 | 816);
                 }
             }
         }
@@ -259,7 +319,7 @@ public class VerticalBuilder
                         {
                             throw new RuntimeException("Failed to build downwards connector at: " + down + " Could not find position for piston");
                         }
-                        /// Blindly move the previous piston on block up. Could cause interference with nearby wires
+                        /// Blindly move the previous piston on block down. Could cause interference with nearby wires
                         /// However its very unlikely that this code get triggered and that piston causes problems so we ignore this problem for now
                         // TODO: fix
                         piston_pos.set(piston_pos.size() - 1, piston_pos.getLast() - 1);

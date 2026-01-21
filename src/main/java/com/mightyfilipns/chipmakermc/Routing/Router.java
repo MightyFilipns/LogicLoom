@@ -224,7 +224,7 @@ public class Router
         boolean dfs_success = false;
         int iter_c = 0;
         do {
-            if(occupied_map.size() >= iter_c)
+            if(occupied_map.size() <= iter_c)
             {
                 occupied_map.add(new HashSet<>());
                 occupied_map_route.add(new HashSet<>());
@@ -326,7 +326,7 @@ public class Router
         boolean dfs_success = false;
         int iter_c = 0;
         do {
-            if(occupied_map.size() >= iter_c)
+            if(occupied_map.size() <= iter_c)
             {
                 occupied_map.add(new HashSet<>());
                 occupied_map_route.add(new HashSet<>());
@@ -525,7 +525,7 @@ public class Router
             return switch (pin_name) {
                 case "A" -> cell_pos.add(0, 0, 5);
                 case "B" -> cell_pos.add(2, 0, 5);
-                case "Y" -> cell_pos.add(1, 0, 0); //cell_pos.add(2, 0, 0); -- currently always set to the right side
+                case "Y" -> cell_pos.add(0, 0, 0); //cell_pos.add(2, 0, 0); -- currently always set to the right side
                 default -> throw new RuntimeException("Invalid pin name: " + pin_name);
             };
         }

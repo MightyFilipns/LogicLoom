@@ -91,11 +91,11 @@ public class TestCmds
     public static int BuildWire(CommandContext<ServerCommandSource> context)
     {
         int index = IntegerArgumentType.getInteger(context, "index");
-        HyperGraphNet h = Router.cached_hy.get(index);
-        RedstoneWireBuilder.FixHypergraphAdjList(0, h);
-        RedstoneWireBuilder.BuildHypergraph(context.getSource().getWorld(), h, Router.g_rep_map, Placer.last_pos.getY() + 3);
-        //TwoPinNet tpn = Router.cached_tpn.get(index);
-        //RedstoneWireBuilder.BuildTwoPin(context.getSource().getWorld(), tpn, Router.g_rep_map, Placer.last_pos.getY() + 3);
+        // HyperGraphNet h = Router.cached_hy.get(index);
+        //RedstoneWireBuilder.FixHypergraphAdjList(0, h);
+        //RedstoneWireBuilder.BuildHypergraph(context.getSource().getWorld(), h, Router.g_rep_map, Placer.last_pos.getY() + 3);
+        TwoPinNet tpn = Router.cached_tpn.get(index);
+        RedstoneWireBuilder.BuildTwoPin(context.getSource().getWorld(), tpn, Router.g_rep_map, Placer.last_pos.getY() + 3);
         return 1;
     }
 
@@ -144,7 +144,7 @@ public class TestCmds
         BlockPos d = BlockPosArgumentType.getBlockPos(context, "down");
         BlockPos p = BlockPosArgumentType.getBlockPos(context, "up");
         List<BlockPos> m = new ArrayList<>();
-        VerticalBuilder.BuildDownwards(context.getSource().getWorld(), d, p, Router.ocm_wire, Placer.last_pos, m);
+        VerticalBuilder.BuildUpwards(context.getSource().getWorld(), d, p, Router.ocm_wire, Placer.last_pos, m);
         return 1;
     }
 }
