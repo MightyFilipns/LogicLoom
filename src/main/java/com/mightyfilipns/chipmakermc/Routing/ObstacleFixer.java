@@ -104,6 +104,10 @@ public class ObstacleFixer
         if (si == mi)
             throw new RuntimeException("Can not connect node to itself");
 
+        if (!adj_list.get(si).stream().filter(a -> a == mi).toList().isEmpty())
+            return;
+            //throw new RuntimeException("Can not add double branch");
+
         adj_list.get(si).add(mi);
         adj_list.get(mi).add(si);
     }

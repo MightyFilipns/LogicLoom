@@ -33,7 +33,7 @@ public class Router
     static List<HashSet<Pair<Integer, Integer>>> ocm_wire = null;
     static List<BlockPos> g_rep_map = null;
 
-    public static int max_y = 0;
+    public static int max_y = 80;
 
     public static void DoRouting(CommandContext<ServerCommandSource> context, JsonDesign.DesignModule mod, Map<CellInfo, BlockPos> cellmap, Map<Integer, BlockPos> port_rel_pos)
     {
@@ -152,6 +152,7 @@ public class Router
         System.out.println("Building hypergraph net wires");
         for (HyperGraphNet hyperGraphNet : hy)
         {
+            RedstoneWireBuilder.FixPointTooClose(0, hyperGraphNet);
             RedstoneWireBuilder.FixHypergraphAdjList(0, hyperGraphNet);
             RedstoneWireBuilder.BuildHypergraph(w, hyperGraphNet, rep_map, starty);
         }

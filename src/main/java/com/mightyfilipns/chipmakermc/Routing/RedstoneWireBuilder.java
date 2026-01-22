@@ -6,6 +6,7 @@ import net.minecraft.block.HorizontalFacingBlock;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
+import org.apache.commons.lang3.tuple.Pair;
 import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
@@ -20,6 +21,146 @@ public class RedstoneWireBuilder
         boolean[] visited = new boolean[h.adj_list.size()];
         visited[h.allpoints_pos] = true;
         DFS_build(h.allpoints_pos, w, h, rep_map, real_y, visited);
+    }
+
+    static void FixPointTooClose(int i, HyperGraphNet h)
+    {
+        boolean[] visited = new boolean[h.adj_list.size()];
+        List<List<Integer>> new_adj = new ArrayList<>();
+        for (List<Integer> integers : h.adj_list)
+        {
+            new_adj.add(new ArrayList<>(integers));
+        }
+        List<BlockPos> new_blk = new ArrayList<>(h.all_points);
+        FixPointTooClose_DFS(i, h, visited, new_adj, new_blk);
+        h.adj_list = new_adj;
+        h.all_points = new_blk;
+    }
+
+    static void FixPointTooClose_DFS(int i, HyperGraphNet h, boolean[] visited, List<List<Integer>> new_adj, List<BlockPos> block_pos_new)
+    {
+        if(visited[i])
+            return;
+        visited[i] = true;
+
+        var pts = h.adj_list.get(i);
+        var cp = h.all_points.get(i);
+        List<Pair<BlockPos, Integer>> candidates = pts.stream().map(a -> Pair.of(h.all_points.get(a).subtract(cp), a)).filter(a -> Math.abs(a.getLeft().getX()) == 1 || Math.abs(a.getLeft().getZ()) == 1).toList();
+        if(candidates.size() > 1)
+        {
+            GetCandidates(candidates, h, i, new_adj, block_pos_new);
+            /*
+            if(candidates.size() == 2)
+            {
+                var c1 = candidates.get(0);
+                var c2 = candidates.get(1);
+                var rp1 = c1.getLeft();
+                var rp2 = c2.getLeft();
+                if(rp1.getX() == rp2.getX() || rp1.getZ() == rp2.getZ())
+                {
+                    // skip
+                }
+                else
+                {
+                    // TODO: properly check if the point is actually movable a.k.a is a Steiner point
+                    var p1 = h.all_points.get(c1.getRight());
+                    var p2 = h.all_points.get(c2.getRight());
+                    block_pos_new.set(c2.getRight(), p2.add(rp1));
+
+                    DisconnBranches(new_adj, i, c2.getRight());
+                    ConnBranches(new_adj, c1.getRight(), c2.getRight());
+                }
+            }
+            else
+                throw new RuntimeException("FixPointTooClose_DFS: Unhandled case candidates.size() >= 3");*/
+        }
+        for (Integer integer : h.adj_list.get(i))
+        {
+            FixPointTooClose_DFS(integer, h, visited, new_adj, block_pos_new);
+        }
+    }
+
+    static void GetCandidates(List<Pair<BlockPos, Integer>> c, HyperGraphNet h, int i, List<List<Integer>> new_adj, List<BlockPos> block_pos_new)
+    {
+        Pair<BlockPos, Integer> cnd1 = null;
+        Pair<BlockPos, Integer> cnd2 = null;
+        out:
+        for (Pair<BlockPos, Integer> pr1 : c)
+        {
+            for (Pair<BlockPos, Integer> pr2 : c)
+            {
+                if(pr1 == pr2)
+                    continue;
+                if(AreDiagonally(pr1.getLeft(), pr2.getLeft()))
+                {
+                    cnd1 = pr1;
+                    cnd2 = pr2;
+                    break out;
+                }
+            }
+        }
+
+        var cnt = h.all_points.get(i);
+
+        if(cnd1 == null)
+            return;
+
+        // the point should be connected to the origin point and to another if not ignore
+        if(h.adj_list.get(cnd1.getRight()).size() != 2)
+            return;
+        if(h.adj_list.get(cnd2.getRight()).size() != 2)
+            return;
+        var op1 = h.adj_list.get(cnd1.getRight()).stream().filter(a -> a != i).findAny().get();
+        var op2 = h.adj_list.get(cnd2.getRight()).stream().filter(a -> a != i).findAny().get();
+
+        var p1 = h.all_points.get(cnd1.getRight());
+        var p2 = h.all_points.get(cnd2.getRight());
+
+        boolean along_x1 = p1.subtract(h.all_points.get(op1)).getX() != 0;
+        boolean along_x2 = p2.subtract(h.all_points.get(op2)).getX() != 0;
+
+        if(along_x2 ^ along_x1)
+        {
+            if(!along_x1)
+            {
+                // 1 - vertical
+                // 2 - horizontal
+                int vx = p1.getX();
+                int minx = Math.min(p2.getX(), h.all_points.get(op2).getX());
+                int maxx = Math.max(p2.getX(), h.all_points.get(op2).getX());
+                if(vx >= minx && vx <= maxx)
+                {
+                    var rp1 = cnd1.getLeft();
+                    var np = h.all_points.get(cnd2.getRight()).add(rp1);
+                    System.out.println("Moving at: " + np + " Center: " + cnt);
+                    block_pos_new.set(cnd2.getRight(), np);
+                    DisconnBranches(new_adj, i, cnd2.getRight());
+                    ConnBranches(new_adj, cnd2.getRight(), cnd1.getRight());
+                }
+            }
+            if(!along_x2)
+            {
+                // 1 - horizontal
+                // 2 - vertical
+                int vx = p2.getX();
+                int minx = Math.min(p1.getX(), h.all_points.get(op1).getX());
+                int maxx = Math.max(p1.getX(), h.all_points.get(op1).getX());
+                if(vx >= minx && vx <= maxx)
+                {
+                    var rp1 = cnd1.getLeft();
+                    var np = h.all_points.get(cnd2.getRight()).add(rp1);
+                    System.out.println("Moving at: " + np + " Center: " + cnt);
+                    block_pos_new.set(cnd2.getRight(), np);
+                    DisconnBranches(new_adj, i, cnd2.getRight());
+                    ConnBranches(new_adj, cnd2.getRight(), cnd1.getRight());
+                }
+            }
+        }
+    }
+
+    static boolean AreDiagonally(BlockPos rp1, BlockPos rp2)
+    {
+       return !(rp1.getX() == rp2.getX() || rp1.getZ() == rp2.getZ());
     }
 
     public static void FixHypergraphAdjList(int i, HyperGraphNet h)
@@ -151,13 +292,6 @@ public class RedstoneWireBuilder
             if (g.size() == 2)
             {
                 var y = real_y + 1;
-                for (BlockPos blockPos : rep)
-                {
-                    if(blockPos.getY() == y)
-                    {
-                        w.setBlockState(blockPos.withY(real_y + 1), Blocks.REPEATER.getDefaultState().with(HorizontalFacingBlock.FACING, dir));
-                    }
-                }
 
                 if(absx == 1 || absz == 1)
                 {
@@ -171,14 +305,6 @@ public class RedstoneWireBuilder
                     int i2 = 0;
 
                     w.setBlockState(repp1, Blocks.REPEATER.getDefaultState().with(HorizontalFacingBlock.FACING, dir));
-                    if(h.allpoints_pos != i)
-                    {
-                        w.setBlockState(p1.withY(real_y + 1), Blocks.REDSTONE_WIRE.getDefaultState());
-                    }
-                    if(h.allpoints_pos != integer)
-                    {
-                        w.setBlockState(p2.withY(real_y + 1), Blocks.REDSTONE_WIRE.getDefaultState());
-                    }
                     w.setBlockState(repp2, Blocks.REPEATER.getDefaultState().with(HorizontalFacingBlock.FACING, dir));
 
                     if(absx == 0)
@@ -190,13 +316,13 @@ public class RedstoneWireBuilder
                                 i2++;
                                 continue;
                             }
-                            w.setBlockState(new BlockPos(repp1.getX(), repp1.getY(), j), Blocks.REDSTONE_WIRE.getDefaultState());
+                            w.setBlockState(new BlockPos(repp1.getX(), repp1.getY(), j), Blocks.REDSTONE_WIRE.getDefaultState(), 2 | 816);
                             i2++;
                         }
 
                         for (int j = Math.min(repp1.getZ(), repp2.getZ()); j < Math.max(repp2.getZ(), repp1.getZ()); j += 16)
                         {
-                            w.setBlockState(new BlockPos(repp1.getX(), repp1.getY(), j), Blocks.REPEATER.getDefaultState().with(HorizontalFacingBlock.FACING, dir));
+                            w.setBlockState(new BlockPos(repp1.getX(), repp1.getY(), j), Blocks.REPEATER.getDefaultState().with(HorizontalFacingBlock.FACING, dir), 2 | 816);
                         }
                     }
                     if(absz == 0)
@@ -208,13 +334,28 @@ public class RedstoneWireBuilder
                                 i2++;
                                 continue;
                             }
-                            w.setBlockState(new BlockPos(j, repp1.getY(), repp1.getZ()), Blocks.REDSTONE_WIRE.getDefaultState());
+                            w.setBlockState(new BlockPos(j, repp1.getY(), repp1.getZ()), Blocks.REDSTONE_WIRE.getDefaultState(), 2 | 816);
                             i2++;
                         }
                         for (int j = Math.min(repp1.getX(), repp2.getX()); j < Math.max(repp2.getX(), repp1.getX()); j += 16)
                         {
-                            w.setBlockState(new BlockPos(j, repp1.getY(), repp1.getZ()), Blocks.REPEATER.getDefaultState().with(HorizontalFacingBlock.FACING, dir));
+                            w.setBlockState(new BlockPos(j, repp1.getY(), repp1.getZ()), Blocks.REPEATER.getDefaultState().with(HorizontalFacingBlock.FACING, dir), 2 | 816);
                         }
+                    }
+                }
+                if(h.allpoints_pos != i)
+                {
+                    w.setBlockState(p1.withY(real_y + 1), Blocks.REDSTONE_WIRE.getDefaultState(), 2 | 816);
+                }
+                if(h.allpoints_pos != integer)
+                {
+                    w.setBlockState(p2.withY(real_y + 1), Blocks.REDSTONE_WIRE.getDefaultState(), 2 | 816);
+                }
+                for (BlockPos blockPos : rep)
+                {
+                    if(blockPos.getY() == y)
+                    {
+                        w.setBlockState(blockPos.withY(real_y + 1), Blocks.REPEATER.getDefaultState().with(HorizontalFacingBlock.FACING, dir), 2 | 816);
                     }
                 }
                 DFS_build(integer, w, h, rep_map, real_y, visited);
@@ -254,7 +395,7 @@ public class RedstoneWireBuilder
             {
                 if(blockPos.getY() == y)
                 {
-                    w.setBlockState(blockPos.withY(real_y + 1), Blocks.REPEATER.getDefaultState().with(HorizontalFacingBlock.FACING, dir));
+                    w.setBlockState(blockPos.withY(real_y + 1), Blocks.REPEATER.getDefaultState().with(HorizontalFacingBlock.FACING, dir), 2 | 816);
                 }
             }
 
@@ -277,13 +418,13 @@ public class RedstoneWireBuilder
                             i2++;
                             continue;
                         }
-                        w.setBlockState(new BlockPos(repp1.getX(), repp1.getY(), j), Blocks.REDSTONE_WIRE.getDefaultState());
+                        w.setBlockState(new BlockPos(repp1.getX(), repp1.getY(), j), Blocks.REDSTONE_WIRE.getDefaultState(), 2 | 816);
                         i2++;
                     }
 
                     for (int j = Math.min(repp1.getZ(), repp2.getZ()); j < Math.max(repp2.getZ(), repp1.getZ()); j += 16)
                     {
-                        w.setBlockState(new BlockPos(repp1.getX(), repp1.getY(), j), Blocks.REPEATER.getDefaultState().with(HorizontalFacingBlock.FACING, dir));
+                        w.setBlockState(new BlockPos(repp1.getX(), repp1.getY(), j), Blocks.REPEATER.getDefaultState().with(HorizontalFacingBlock.FACING, dir), 2 | 816);
                     }
                 }
                 if(absz == 0)
@@ -295,28 +436,29 @@ public class RedstoneWireBuilder
                             i2++;
                             continue;
                         }
-                        w.setBlockState(new BlockPos(j, repp1.getY(), repp1.getZ()), Blocks.REDSTONE_WIRE.getDefaultState());
+                        w.setBlockState(new BlockPos(j, repp1.getY(), repp1.getZ()), Blocks.REDSTONE_WIRE.getDefaultState(), 2 | 816);
                         i2++;
                     }
                     for (int j = Math.min(repp1.getX(), repp2.getX()); j < Math.max(repp2.getX(), repp1.getX()); j += 16)
                     {
-                        w.setBlockState(new BlockPos(j, repp1.getY(), repp1.getZ()), Blocks.REPEATER.getDefaultState().with(HorizontalFacingBlock.FACING, dir));
+                        w.setBlockState(new BlockPos(j, repp1.getY(), repp1.getZ()), Blocks.REPEATER.getDefaultState().with(HorizontalFacingBlock.FACING, dir), 2 | 816);
                     }
                 }
                 w.setBlockState(repp1, Blocks.REPEATER.getDefaultState().with(HorizontalFacingBlock.FACING, dir));
-                if(i != 1)
-                {
-                    w.setBlockState(p2.withY(real_y + 1), Blocks.REDSTONE_WIRE.getDefaultState());
-                }
-                w.setBlockState(p1.withY(real_y + 1), Blocks.REDSTONE_WIRE.getDefaultState());
-                w.setBlockState(repp2, Blocks.REPEATER.getDefaultState().with(HorizontalFacingBlock.FACING, dir));
+                w.setBlockState(repp2, Blocks.REPEATER.getDefaultState().with(HorizontalFacingBlock.FACING, dir), 2 | 816);
             }
+            if(i != 1)
+            {
+                w.setBlockState(p2.withY(real_y + 1), Blocks.REDSTONE_WIRE.getDefaultState(), 2 | 816);
+            }
+            w.setBlockState(p1.withY(real_y + 1), Blocks.REDSTONE_WIRE.getDefaultState(), 2 | 816);
 
         }
-        for (int i = 0; i < tpn.point_list.size() - 1; i++)
+        for (int i = 1; i < tpn.point_list.size() - 1; i++)
         {
-            w.setBlockState(tpn.point_list.get(i).withY(y), Blocks.REDSTONE_WIRE.getDefaultState());
+            w.setBlockState(tpn.point_list.get(i).withY(y), Blocks.REDSTONE_WIRE.getDefaultState(), 2 | 816);
         }
+        // w.updateNeighbors();
     }
 
     private static @NonNull List<BlockPos> GetIntersectorsZ(List<BlockPos> h, BlockPos p1, BlockPos p2) {
