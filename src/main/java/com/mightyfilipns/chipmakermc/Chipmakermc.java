@@ -82,6 +82,8 @@ public class Chipmakermc implements ModInitializer
                                     .then(CommandManager.argument("index", IntegerArgumentType.integer(0))
                                     .executes(TestCmds::BuildWire)))
                     )
+                    .then(CommandManager.literal("debug")
+                            .then(CommandManager.literal("vcddebug").executes(Chipmakermc::VCDDebug)))
             );
         });
 
@@ -94,14 +96,19 @@ public class Chipmakermc implements ModInitializer
 
                 try {
                     Router.SetupFlute(dat1.get().getInputStream(), dat2.get().getInputStream());
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
+                } catch (Exception e) {
+                    System.out.println("Failed to setup flute Error: " +  e.getMessage());
                 }
             }
         );
     }
 
 
+    public static int VCDDebug(CommandContext<ServerCommandSource> context)
+    {
+        VCDHandler.LoadVCD("C:\\Users\\Maksim\\Desktop\\dump.vcd.txt");
+        return 1;
+    }
     public static int Wipe(CommandContext<ServerCommandSource> context)
     {
         int maxx = Placer.do_actual_place ? 100 * Placer.X_CELL_SIZE : 100;

@@ -18,7 +18,7 @@ public class JsonDesign
         public Map<String, String> attributes;
         public Map<String, DesignPortInfo> ports;
         public Map<String, CellInfo> cells;
-        public Map<String, Object> netnames;
+        public Map<String, JsonWire> netnames;
     }
     public class DesignPortInfo extends AbstractCell
     {
@@ -34,6 +34,12 @@ public class JsonDesign
         Output,
         @SerializedName("inout")
         Inout
+    }
+
+    public class JsonWire
+    {
+        public boolean hide_name;
+        public List<Integer> bits;
     }
 
     static class BooleanTypeAdapter implements JsonDeserializer<Boolean> {
