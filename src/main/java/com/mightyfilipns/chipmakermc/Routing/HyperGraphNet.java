@@ -5,16 +5,17 @@ import net.minecraft.util.math.BlockPos;
 
 import java.util.List;
 
-public class HyperGraphNet {
+public class HyperGraphNet
+{
     public Integer net_id;
     public Flute.Tree tree;
     public List<AbstractCell> cells;
-    List<BlockPos> pin_port_pos;
-    List<List<Integer>> adj_list;
-    List<BlockPos> all_points;
-    int y_pos;
-    int out_port_pos;
-    int allpoints_pos;
+    public List<BlockPos> pin_port_pos;
+    public List<List<Integer>> adj_list;
+    public List<BlockPos> all_points;
+    public int y_pos;
+    public int out_port_pos;
+    public int allpoints_pos;
 
     public HyperGraphNet(Integer net_id, Flute.Tree tree, List<AbstractCell> cells, List<BlockPos> pin_port_pos, int out_port_pos) {
         this.net_id = net_id;

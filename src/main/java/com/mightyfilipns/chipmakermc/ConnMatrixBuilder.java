@@ -178,7 +178,7 @@ public class ConnMatrixBuilder
         return Pair.of(connection_m, dd);
     }
 
-    static Triple<Matrix, Map<Integer, List<AbstractCell>>, List<Pair<AbstractCell, AbstractCell>>> GetConnectivityMatrixHessian2()
+    public static Triple<Matrix, Map<Integer, List<AbstractCell>>, List<Pair<AbstractCell, AbstractCell>>> GetConnectivityMatrixHessian2()
     {
         var des = Chipmakermc.loaded_design;
         var mod = (JsonDesign.DesignModule)des.modules.values().toArray()[0];

@@ -3,6 +3,7 @@ package com.mightyfilipns.chipmakermc.Routing;
 import com.mojang.datafixers.types.templates.Check;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.HorizontalFacingBlock;
+import net.minecraft.block.RepeaterBlock;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
@@ -10,6 +11,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 
@@ -21,6 +23,14 @@ public class RedstoneWireBuilder
         boolean[] visited = new boolean[h.adj_list.size()];
         visited[h.allpoints_pos] = true;
         DFS_build(h.allpoints_pos, w, h, rep_map, real_y, visited);
+        //var fully_built = Arrays.stream(visited).allMatch(a -> a);
+        for (int i = 0; i < visited.length; i++)
+        {
+            if(!visited[i])
+            {
+                System.out.println("Node not visited: " + h.all_points.get(i) + " Y: " + h.y_pos);
+            }
+        }
     }
 
     static void FixPointTooClose(int i, HyperGraphNet h)
@@ -128,11 +138,11 @@ public class RedstoneWireBuilder
                 int vx = p1.getX();
                 int minx = Math.min(p2.getX(), h.all_points.get(op2).getX());
                 int maxx = Math.max(p2.getX(), h.all_points.get(op2).getX());
-                if(vx >= minx && vx <= maxx)
+                if(vx > minx && vx < maxx)
                 {
                     var rp1 = cnd1.getLeft();
                     var np = h.all_points.get(cnd2.getRight()).add(rp1);
-                    System.out.println("Moving at: " + np + " Center: " + cnt);
+                    System.out.println("Moving at: " + np + " Old: " + h.all_points.get(cnd2.getRight()) + " Center: " + cnt);
                     block_pos_new.set(cnd2.getRight(), np);
                     DisconnBranches(new_adj, i, cnd2.getRight());
                     ConnBranches(new_adj, cnd2.getRight(), cnd1.getRight());
@@ -145,7 +155,7 @@ public class RedstoneWireBuilder
                 int vx = p2.getX();
                 int minx = Math.min(p1.getX(), h.all_points.get(op1).getX());
                 int maxx = Math.max(p1.getX(), h.all_points.get(op1).getX());
-                if(vx >= minx && vx <= maxx)
+                if(vx > minx && vx < maxx)
                 {
                     var rp1 = cnd1.getLeft();
                     var np = h.all_points.get(cnd2.getRight()).add(rp1);
@@ -304,9 +314,6 @@ public class RedstoneWireBuilder
 
                     int i2 = 0;
 
-                    w.setBlockState(repp1, Blocks.REPEATER.getDefaultState().with(HorizontalFacingBlock.FACING, dir));
-                    w.setBlockState(repp2, Blocks.REPEATER.getDefaultState().with(HorizontalFacingBlock.FACING, dir));
-
                     if(absx == 0)
                     {
                         for (int j = Math.min(repp1.getZ(), repp2.getZ()); j < Math.max(repp2.getZ(), repp1.getZ()); j++)
@@ -342,6 +349,9 @@ public class RedstoneWireBuilder
                             w.setBlockState(new BlockPos(j, repp1.getY(), repp1.getZ()), Blocks.REPEATER.getDefaultState().with(HorizontalFacingBlock.FACING, dir), 2 | 816);
                         }
                     }
+
+                    w.setBlockState(repp1, Blocks.REPEATER.getDefaultState().with(HorizontalFacingBlock.FACING, dir).with(RepeaterBlock.DELAY, 4), 2 | 816);
+                    w.setBlockState(repp2, Blocks.REPEATER.getDefaultState().with(HorizontalFacingBlock.FACING, dir), 2 | 816);
                 }
                 if(h.allpoints_pos != i)
                 {
@@ -444,8 +454,10 @@ public class RedstoneWireBuilder
                         w.setBlockState(new BlockPos(j, repp1.getY(), repp1.getZ()), Blocks.REPEATER.getDefaultState().with(HorizontalFacingBlock.FACING, dir), 2 | 816);
                     }
                 }
-                w.setBlockState(repp1, Blocks.REPEATER.getDefaultState().with(HorizontalFacingBlock.FACING, dir));
-                w.setBlockState(repp2, Blocks.REPEATER.getDefaultState().with(HorizontalFacingBlock.FACING, dir), 2 | 816);
+
+
+                w.setBlockState(repp1, Blocks.REPEATER.getDefaultState().with(HorizontalFacingBlock.FACING, dir), 2 | 816);
+                w.setBlockState(repp2, Blocks.REPEATER.getDefaultState().with(HorizontalFacingBlock.FACING, dir).with(RepeaterBlock.DELAY, 4), 2 | 816);
             }
             if(i != 1)
             {

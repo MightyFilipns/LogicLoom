@@ -1,6 +1,8 @@
 package com.mightyfilipns.chipmakermc;
 
 import Jama.Matrix;
+import com.mightyfilipns.chipmakermc.Placment.NewPlacer;
+import com.mightyfilipns.chipmakermc.Placment.PlacerMisc;
 import com.mightyfilipns.chipmakermc.Routing.RoutingPrep;
 import com.mojang.brigadier.context.CommandContext;
 import net.minecraft.block.BlockState;
@@ -22,12 +24,12 @@ import static java.lang.Math.*;
 public class Placer
 {
     public final static int Z_CELL_SIZE = 7;
-    public final static int X_CELL_SIZE = 4;
+    public final static int X_CELL_SIZE = 6;
     public final static int Y_CELL_SIZE = 4;
 
     public static double force_mul = 0.04D;
     public static int max_iter = 140;
-    public static int chip_size = 70;
+    public static int chip_size = 200;
 
     public static BlockPos last_pos = new BlockPos(74, -12, -189);
 
@@ -45,8 +47,11 @@ public class Placer
         var des = Chipmakermc.loaded_design;
         var mod = (JsonDesign.DesignModule)des.modules.values().toArray()[0];
 
-        DoSimplePlacer2(context, mod);
+        NewPlacer.PlaceDesign(context);
 
+        // DoSimplePlacer2(context, mod);
+
+        VCDHandler.SetMap(mod);
         return 1;
     }
 
@@ -101,6 +106,7 @@ public class Placer
                 int x = x_counter * 3;
                 int xworldpos = x_counter * X_CELL_SIZE;
                 var npos = pos.add(xworldpos,0,z);
+                w.setBlockState(npos, Blocks.REDSTONE_WIRE.getDefaultState());
                 w.setBlockState(npos.add(0, 0, -1),value.getValue().direction == JsonDesign.PortDirection.Input ?  Blocks.RED_WOOL.getDefaultState() : Blocks.REDSTONE_LAMP.getDefaultState());
                 w.setBlockState(npos.add(0, 1, -1), Blocks.OAK_SIGN.getDefaultState().with(SignBlock.ROTATION, 8));
                 ((SignBlockEntity)w.getBlockEntity(npos.add(0,1,-1))).setText(new SignText().withMessage(1, Text.of(String.format("%s - %d", value.getKey(), bit))), true);
@@ -131,7 +137,7 @@ public class Placer
 
         boolean has_overlap = false;
 
-        int iter =0;
+        int iter = 0;
 
         int[] xsa = null;
         int[] zsa = null;

@@ -1,5 +1,10 @@
 package com.mightyfilipns.chipmakermc.Routing;
 
+import com.mojang.authlib.minecraft.client.MinecraftClient;
+import net.fabricmc.loader.impl.game.minecraft.MinecraftGameProvider;
+import net.minecraft.block.Blocks;
+import net.minecraft.server.dedicated.MinecraftDedicatedServer;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -7,6 +12,8 @@ import java.util.*;
 
 public class LeeRouter
 {
+    public static ServerWorld w = null;
+
     public static List<Pair<Integer, Integer>> DoLeeRouter(HashSet<Pair<Integer, Integer>> port_map, BlockPos start, BlockPos end)
     {
         HashMap<Pair<Integer, Integer>, Integer> value_grid = new HashMap<>();
@@ -25,25 +32,42 @@ public class LeeRouter
         var max = Pair.of(Math.max(start.getX(), end.getX()), Math.max(start.getZ(), end.getZ()));
         var min = Pair.of(Math.min(start.getX(), end.getX()), Math.min(start.getZ(), end.getZ()));
 
+        int tol = 23;
         while(!value_grid.containsKey(endp))
         {
             lastv++;
             List<Pair<Integer, Integer>> new_mark = new ArrayList<>();
+            boolean expanded = false;
             for (Pair<Integer, Integer> lastMarkedPoint : last_marked_points)
             {
                 // var pts = GetSurroundingPoints(lastMarkedPoint);
-                var pts = GetSurroundingPointsLimited(lastMarkedPoint, max, min);
+                var pts = GetSurroundingPointsLimited(lastMarkedPoint, max, min, tol);
                 for (Pair<Integer, Integer> pt : pts)
                 {
                     if(!value_grid.containsKey(pt) && !port_map.contains(pt))
                     {
+                        expanded = true;
                         value_grid.put(pt, lastv);
                         new_mark.add(pt);
                     }
                 }
 
             }
-            last_marked_points = new_mark;
+            if(!new_mark.isEmpty())
+            {
+                last_marked_points = new_mark;
+            }
+            else
+            {
+                for (Pair<Integer, Integer> integerIntegerPair : port_map)
+                {
+                    w.setBlockState(Misc.AsBlockPos(integerIntegerPair, 0), Blocks.RED_WOOL.getDefaultState());
+                }
+                w.setBlockState(start.withY(0), Blocks.BLUE_WOOL.getDefaultState());
+                w.setBlockState(end.withY(0), Blocks.BLUE_WOOL.getDefaultState());
+                throw new RuntimeException("empty new mark");
+            }
+
             if(lastv > 2000)
             {
                 throw new RuntimeException("Lee Router: Exceeded 2000 iterations. End point is possibly unreachable or too far");
@@ -57,7 +81,7 @@ public class LeeRouter
         while(last_pos != sp)
         {
             // var res = GetSurroundingPoints(last_pos).stream().filter(value_grid::containsKey);
-            var res = GetSurroundingPointsLimited(last_pos, max, min).stream().filter(value_grid::containsKey);
+            var res = GetSurroundingPointsLimited(last_pos, max, min, tol).stream().filter(value_grid::containsKey);
             var r1 = res.toList();
             var possible_tiles_v = value_grid.entrySet().stream().filter(a -> r1.contains(a.getKey())).toList();
             var minv = possible_tiles_v.stream().min(Comparator.comparingInt(Map.Entry::getValue)).get().getValue();
@@ -106,22 +130,22 @@ public class LeeRouter
         return ret;
     }
 
-    public static List<Pair<Integer, Integer>> GetSurroundingPointsLimited(Pair<Integer, Integer> p, Pair<Integer, Integer> max, Pair<Integer, Integer> min)
+    public static List<Pair<Integer, Integer>> GetSurroundingPointsLimited(Pair<Integer, Integer> p, Pair<Integer, Integer> max, Pair<Integer, Integer> min, int tolerance)
     {
         List<Pair<Integer, Integer>> ret = new ArrayList<>();
-        if(p.getLeft() <= max.getLeft())
+        if(p.getLeft() <= max.getLeft() + tolerance)
         {
             ret.add(Pair.of(p.getLeft() + 1, p.getRight()));
         }
-        if(p.getLeft() >= min.getLeft())
+        if(p.getLeft() >= min.getLeft() - tolerance)
         {
             ret.add(Pair.of(p.getLeft() - 1, p.getRight()));
         }
-        if(p.getRight() <= max.getRight())
+        if(p.getRight() <= max.getRight() + tolerance)
         {
             ret.add(Pair.of(p.getLeft(), p.getRight() + 1));
         }
-        if(p.getRight() >= min.getRight())
+        if(p.getRight() >= min.getRight() - tolerance)
         {
             ret.add(Pair.of(p.getLeft(), p.getRight() - 1));
         }

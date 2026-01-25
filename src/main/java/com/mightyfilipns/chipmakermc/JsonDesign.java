@@ -33,7 +33,12 @@ public class JsonDesign
         @SerializedName("output")
         Output,
         @SerializedName("inout")
-        Inout
+        Inout;
+
+        public PortDirection Invert()
+        {
+            return this == Input ? Output : Input;
+        }
     }
 
     public class JsonWire

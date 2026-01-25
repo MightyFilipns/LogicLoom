@@ -27,17 +27,23 @@ public class Router
 {
     static Flute flu = null;
 
-    static List<HyperGraphNet> cached_hy = null;
-    static List<TwoPinNet> cached_tpn = null;
+    public static List<HyperGraphNet> cached_hy = null;
+    public static List<TwoPinNet> cached_tpn = null;
     static List<HashSet<Pair<Integer, Integer>>> ocm = null;
     static List<HashSet<Pair<Integer, Integer>>> ocm_wire = null;
     static List<BlockPos> g_rep_map = null;
+    public static List<BlockPos> g_pistonlist = new ArrayList<>();
+    public static List<BlockPos> g_update_pos = new ArrayList<>();
 
     public static int max_y = 80;
 
     public static void DoRouting(CommandContext<ServerCommandSource> context, JsonDesign.DesignModule mod, Map<CellInfo, BlockPos> cellmap, Map<Integer, BlockPos> port_rel_pos)
     {
+        g_pistonlist.clear();
+        g_update_pos.clear();
         Map<Integer, List<AbstractCell>> dd = new HashMap<>();
+
+        LeeRouter.w = context.getSource().getWorld();
 
         for (CellInfo cellInfo : mod.cells.values())
         {
@@ -74,19 +80,29 @@ public class Router
 
         for (TwoPinNet tp : tpn)
         {
-            port_map.add(Pair.of(tp.p1.getX(), tp.p1.getZ()));
-            port_map.add(Pair.of(tp.p2.getX(), tp.p2.getZ()));
+            port_map.addAll(Misc.MakeObstMapFromPort(tp.p1, tp.p1dir));
+            port_map.addAll(Misc.MakeObstMapFromPort(tp.p2, tp.p1dir.Invert()));
+
+            // port_map.add(Pair.of(tp.p1.getX(), tp.p1.getZ()));
+            // port_map.add(Pair.of(tp.p2.getX(), tp.p2.getZ()));
         }
 
         for (HyperGraphNet hyperGraphNet : hy)
         {
+            for (int i = 0; i < hyperGraphNet.pin_port_pos.size(); i++)
+            {
+                var pinPortPo = hyperGraphNet.pin_port_pos.get(i);
+                JsonDesign.PortDirection dir = i == hyperGraphNet.out_port_pos ? JsonDesign.PortDirection.Output : JsonDesign.PortDirection.Input;
+                port_map.addAll(Misc.MakeObstMapFromPort(pinPortPo, dir));
+            }
+            /*
             for (BlockPos pinPortPo : hyperGraphNet.pin_port_pos)
             {
                 port_map.add(Pair.of(pinPortPo.getX(), pinPortPo.getZ()));
-            }
+            }*/
         }
 
-        int starty = pos.getY() + 3;
+        int starty = pos.getY() + Placer.Y_CELL_SIZE;
 
         int i = 0;
         List<HashSet<Pair<Integer, Integer>>> occupied_map = new ArrayList<>();
@@ -119,6 +135,7 @@ public class Router
             BuildTwoPinNet(twoPinNet, w, starty + twoPinNet.y_pos * 2);
             i++;
         }
+        /*
         System.out.println("Building hypergraph vertical connectors");
         for (HyperGraphNet hyperGraphNet : hy)
         {
@@ -148,7 +165,7 @@ public class Router
                 VerticalBuilder.BuildUpwards(w, tp.p1, tp.p1.withY(starty + tp.y_pos * 2), occupied_map_wire, pos, rep_map);
                 VerticalBuilder.BuildDownwards(w, tp.p2, tp.p2.withY(starty + tp.y_pos * 2), occupied_map_wire, pos, rep_map);
             }
-        }
+        }*/
         System.out.println("Building hypergraph net wires");
         for (HyperGraphNet hyperGraphNet : hy)
         {
@@ -161,6 +178,13 @@ public class Router
         {
             RedstoneWireBuilder.BuildTwoPin(w, twoPinNet, rep_map, starty);
         }
+
+        /*
+        System.out.println("Sending block updates");
+        for (BlockPos gUpdatePo : g_update_pos)
+        {
+            w.updateNeighbors(gUpdatePo, Blocks.REDSTONE_BLOCK);
+        }*/
 
         /*
         for (BlockPos blockPos : rep_map)
@@ -184,7 +208,7 @@ public class Router
         }
         var w = context.getSource().getWorld();
         int i = 0;
-        int starty = Placer.last_pos.getY() + 3;
+        int starty = Placer.last_pos.getY() + Placer.Y_CELL_SIZE;
         for (HyperGraphNet hp : cached_hy)
         {
             System.out.println("Building hypergraph " + (i + 1) + " of " + cached_hy.size());
@@ -256,10 +280,12 @@ public class Router
 
     private static void FixObstacleTwoPinNet(TwoPinNet tpn, HashSet<Pair<Integer, Integer>> port_map)
     {
-        var pr1 = Pair.of(tpn.p1.getX(), tpn.p1.getZ());
-        var pr2 = Pair.of(tpn.p2.getX(), tpn.p2.getZ());
-        port_map.remove(pr1);
-        port_map.remove(pr2);
+        var pr1 = Misc.MakeObstMapFromPortRemove(tpn.p1, tpn.p1dir);
+        var pr2 = Misc.MakeObstMapFromPortRemove(tpn.p2, tpn.p1dir.Invert());
+        var pr3 = new HashSet<>(pr1);
+        pr3.addAll(pr2);
+        port_map.removeAll(pr3);
+
         var p1 = tpn.p1;
         var p2 = tpn.p2;
         var mid1 = new BlockPos(p1.getX(), 0, p2.getZ());
@@ -300,8 +326,7 @@ public class Router
             tpn.adj_list = adjl;
         }
 
-        port_map.add(pr1);
-        port_map.add(pr2);
+        port_map.addAll(pr3);
     }
 
     private static List<TwoPinNet> HandleTwoPinNets(List<Map.Entry<Integer, List<AbstractCell>>> twopin, Map<CellInfo, BlockPos> cellmap, Map<Integer, BlockPos> port_rel_pos)
@@ -525,8 +550,8 @@ public class Router
             var cell_pos = cellmap.get(b);
             return switch (pin_name) {
                 case "A" -> cell_pos.add(0, 0, 5);
-                case "B" -> cell_pos.add(2, 0, 5);
-                case "Y" -> cell_pos.add(0, 0, 0); //cell_pos.add(2, 0, 0); -- currently always set to the right side
+                case "B" -> cell_pos.add(3, 0, 5);
+                case "Y" -> cell_pos.add(-1, 0, 0); //cell_pos.add(2, 0, 0); -- currently always set to the right side
                 default -> throw new RuntimeException("Invalid pin name: " + pin_name);
             };
         }

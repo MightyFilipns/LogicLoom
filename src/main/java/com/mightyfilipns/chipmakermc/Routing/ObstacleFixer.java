@@ -1,5 +1,6 @@
 package com.mightyfilipns.chipmakermc.Routing;
 
+import com.mightyfilipns.chipmakermc.JsonDesign;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import org.apache.commons.lang3.tuple.Pair;
@@ -14,7 +15,17 @@ public class ObstacleFixer
 
     static void FixObstaclesHyperGraph(HyperGraphNet hp, HashSet<Pair<Integer, Integer>> port_map, ServerWorld w)
     {
-        hp.pin_port_pos.stream().map(a -> Pair.of(a.getX(), a.getZ())).toList().forEach(port_map::remove);
+        HashSet<Pair<Integer, Integer>> obst_points = new HashSet<>();
+        hp.pin_port_pos.stream().map(a -> Misc.MakeObstMapFromPortRemove(a,
+                a == hp.pin_port_pos.get(hp.out_port_pos) ? JsonDesign.PortDirection.Output : JsonDesign.PortDirection.Input)).forEach(obst_points::addAll);
+        port_map.removeAll(obst_points);
+        // hp.pin_port_pos.stream().map(a -> Pair.of(a.getX(), a.getZ())).toList().forEach(port_map::remove);
+        /*var d = hp.pin_port_pos.stream()
+                .<HashSet<Pair<Integer, Integer>>>mapMulti((a, c)
+                        -> c.accept(Misc.MakeObstMapFromPort(a,
+                        a == hp.pin_port_pos.get(hp.out_port_pos) ? JsonDesign.PortDirection.Output : JsonDesign.PortDirection.Input)
+                )).toList();*/
+
         List<List<Integer>> adj_list = new ArrayList<>();
         List<BlockPos> all_points = new ArrayList<>();
         HashMap<BlockPos, Integer> block_to_index = new HashMap<>();
@@ -24,7 +35,11 @@ public class ObstacleFixer
             if(port_map.contains(Pair.of(brn.x, brn.y)))
             {
                 // Steiner point is over a port
-                brn.x--; // Move the Steiner point
+                do {
+                    // Move the Steiner point
+                    brn.x--;
+                    // TODO: better algorithm for finding a valid point
+                } while(port_map.contains(Pair.of(brn.x, brn.y)));
             }
         }
 
@@ -96,7 +111,8 @@ public class ObstacleFixer
         hp.allpoints_pos = all_points.indexOf(hp.pin_port_pos.get(hp.out_port_pos).withY(0));
 
         hp.SetAdjList(adj_list, all_points);
-        port_map.addAll(hp.pin_port_pos.stream().map(a -> Pair.of(a.getX(), a.getZ())).toList());
+        port_map.addAll(obst_points);
+        //port_map.addAll(hp.pin_port_pos.stream().map(a -> Pair.of(a.getX(), a.getZ())).toList());
     }
 
     public static void ConnBranches(List<List<Integer>> adj_list, int si, int mi)

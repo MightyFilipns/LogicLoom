@@ -53,7 +53,6 @@ public class RoutingPrep
     {
         w.setBlockState(p.add(0,1,0), Blocks.REDSTONE_BLOCK.getDefaultState());
         w.setBlockState(p.add(0,2,0), Blocks.STICKY_PISTON.getDefaultState().with(FacingBlock.FACING, Direction.DOWN));
-        w.setBlockState(p.add(0,3,0), Blocks.LIME_WOOL.getDefaultState());
-        w.setBlockState(p.add(0,4,0), Blocks.REDSTONE_WIRE.getDefaultState());
+        w.setBlockState(p.add(0,3,0), Blocks.NOTE_BLOCK.getDefaultState());
     }
 }

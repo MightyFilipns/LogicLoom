@@ -83,7 +83,9 @@ public class Chipmakermc implements ModInitializer
                                     .executes(TestCmds::BuildWire)))
                     )
                     .then(CommandManager.literal("debug")
-                            .then(CommandManager.literal("vcddebug").executes(Chipmakermc::VCDDebug)))
+                            .then(CommandManager.literal("vcddebug").executes(Chipmakermc::VCDDebug))
+                            .then(CommandManager.literal("vcdcomp").executes(Chipmakermc::VCDComp))
+                            .then(CommandManager.literal("check_piston").executes(TestCmds::CheckPistons)))
             );
         });
 
@@ -106,7 +108,12 @@ public class Chipmakermc implements ModInitializer
 
     public static int VCDDebug(CommandContext<ServerCommandSource> context)
     {
-        VCDHandler.LoadVCD("C:\\Users\\Maksim\\Desktop\\dump.vcd.txt");
+        VCDHandler.LoadVCD("/home/Filip/.teroshdl/build/dump.vcd");
+        return 1;
+    }
+    public static int VCDComp(CommandContext<ServerCommandSource> context)
+    {
+        VCDHandler.GetCurrentValuesAndCompare(context.getSource().getWorld());
         return 1;
     }
     public static int Wipe(CommandContext<ServerCommandSource> context)
