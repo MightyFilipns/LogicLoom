@@ -16,6 +16,7 @@ import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
+import org.jspecify.annotations.NonNull;
 
 import java.util.*;
 
@@ -76,7 +77,7 @@ public class NewPlacer
         //AddFixedVirtualCell(connection_m, c_x, c_z,  chip_size, chip_size / 2, Double.MIN_VALUE);
 
         //AddFixedVirtualCell(connection_m, c_x, c_z,  chip_size, 0);
-        AddFixedVirtualCell(connection_m, c_x, c_z,  (chip_size / X_CELL_SIZE) / 2 , (chip_size/ Z_CELL_SIZE) / 2);
+        AddFixedVirtualCell(connection_m, c_x, c_z,  (chip_size) / 2 , (chip_size ) / 2, 1);
         //AddFixedVirtualCell(connection_m, c_x, c_z, 0, chip_size);
         // AddFixedVirtualCell(connection_m, c_x, c_z, 0, 0);
 
@@ -94,30 +95,34 @@ public class NewPlacer
         Map<CellInfo, BlockPos> mp = new HashMap<>();
         do
         {
+            x_sol = connection_m.solve(c_x.plus(f_x));
+            z_sol = connection_m.solve(c_z.plus(f_z));
+
             // Sanity check
             if(iter > max_iter)
             {
-                var d = GetOverlapPos(xsa, zsa);
+                var d = GetDensity(xsa, zsa);
                 context.getSource().sendFeedback(() -> Text.literal("Max iter reached - " + max_iter + " Overlaps: " + d.size()), false);
                 MarkOverlapPos(d, context, 1);
                 break;
             }
+            if(!Arrays.stream(z_sol.getColumnPackedCopy()).allMatch(Double::isFinite))
+            {
+                throw new RuntimeException("Err");
+            }
 
-            x_sol = connection_m.solve(c_x.plus(f_x));
-            z_sol = connection_m.solve(c_z.plus(f_z));
-
-            xsa = RoundMtxSol(x_sol, X_CELL_SIZE);
-            zsa = RoundMtxSol(z_sol, Z_CELL_SIZE);
+            xsa = RoundMtxSol(x_sol, 1);// RoundMtxSol(x_sol, X_CELL_SIZE);
+            zsa = RoundMtxSol(z_sol, 1);
 
             has_overlap = CheckOverlap(xsa, zsa);
 
             System.out.println("Iter: " + iter);
 
-            // obb = FixOutOfBounds(x_sol, z_sol, f_x, f_z, xsa, zsa);
+            obb = FixOutOfBounds(x_sol, z_sol, f_x, f_z, xsa, zsa);
 
             if(has_overlap)
             {
-                FixOverLapPossion(x_sol ,z_sol, f_x, f_z);
+                FixOverLapPossion(x_sol, z_sol, f_x, f_z, xsa, zsa);
             }
 
             iter++;
@@ -135,6 +140,10 @@ public class NewPlacer
         {
             int x_offset = ClampVal(xvec[i], chip_size);
             int z_offset = ClampVal(zvec[i], chip_size);
+            if(x_offset != xvec[i] || z_offset != zvec[i])
+            {
+                System.out.println("OBB at Z: " + zvec[i] + " X:" + xvec[i]);
+            }
             BlockState defaultState = x_offset != xvec[i] || z_offset != zvec[i] ? Blocks.YELLOW_WOOL.getDefaultState() : Blocks.LIGHT_BLUE_WOOL.getDefaultState();
             for (int x = 0; x < X_CELL_SIZE; x++)
             {
@@ -151,18 +160,9 @@ public class NewPlacer
         return max(min(xvec, chipsz), 0);
     }
 
-    private static void FixOverLapPossion(Matrix xsol, Matrix zsol, Matrix f_x, Matrix f_z)
+    private static void FixOverLapPossion(Matrix xsol, Matrix zsol, Matrix f_x, Matrix f_z, int[] xsa, int[] zsa)
     {
-        HashMap<Pair<Integer, Integer>, Integer> density = new HashMap<>();
-        for (int x = 0; x < xsol.getRowDimension(); x++)
-        {
-            double xv = xsol.get(x,0);
-            double zv = zsol.get(x,0);
-            var pr = Pair.of((int)xv /X_CELL_SIZE, (int)zv/Z_CELL_SIZE);
-            var dn = density.computeIfAbsent(pr, (a) -> 0);
-            dn++;
-            density.put(pr, dn);
-        }
+        HashMap<Pair<Integer, Integer>, Integer> density = GetDensityQuick(xsa, zsa); //GetDensity(xsa, zsa);
         for (int i = 0; i < xsol.getRowDimension(); i++)
         {
             double x = xsol.get(i,0);
@@ -176,14 +176,35 @@ public class NewPlacer
                     continue;
                 double x2 = xsol.get(j,0);
                 double z2 = zsol.get(j,0);
-                var pr = Pair.of((int)x2 / X_CELL_SIZE, (int)z2 / Z_CELL_SIZE);
-                var ld = density.getOrDefault(Pair.of(pr), 0);
+                // var pr = Pair.of((int)x2 / X_CELL_SIZE, (int)z2 / Z_CELL_SIZE);
+                /*
+                int dt = 0;
+                for (int xc = 0; xc < X_CELL_SIZE; xc++) {
+                    for (int zc = 0; zc < Z_CELL_SIZE; zc++) {
+                        dt += density.computeIfAbsent(Pair.of((int)round(x2) + xc, (int)round(z2) + zc), a -> 0);
+                    }
+                }*/
+
+                var ld = 1; //density.getOrDefault(Pair.of(pr), 1);
+                //var ld = dt / CELL_AREA;
+                //force_sumx += 1 / ((x - x2) * (x - x2));
+                //force_sumz += 1 / ((z - z2) * (z - z2));
+
                 double euclidean_dist = ((x - x2) * (x - x2)) + ((z - z2) * (z - z2));
-                force_sumx += (ld * (x - x2)) / euclidean_dist;
-                force_sumz += (ld * (z - z2)) / euclidean_dist;
+                if(!Double.isNaN(euclidean_dist))
+                {
+                    force_sumx += (ld * (x - x2)) / euclidean_dist;
+                    force_sumz += (ld * (z - z2)) / euclidean_dist;
+                }
             }
-            AddAtMatrix(f_x, i, 0, force_sumx * force_mul);
-            AddAtMatrix(f_z, i, 0, force_sumz * force_mul);
+            if(!Double.isNaN(force_sumx))
+            {
+                AddAtMatrix(f_x, i, 0, force_sumx * force_mul);
+            }
+            if(!Double.isNaN(force_sumz))
+            {
+                AddAtMatrix(f_z, i, 0, force_sumz * force_mul);
+            }
         }
     }
 
@@ -196,11 +217,11 @@ public class NewPlacer
             int zc = zsa[i];
             int redirx = 0;
             int redirz = 0;
-            if (xc < 0)
+            if (xc <= 0)
                 redirx = abs(xc);
             if (xc > chip_size)
                 redirx = xc - chip_size;
-            if (zc < 0)
+            if (zc <= 0)
                 redirz = abs(zc);
             if (zc > chip_size)
                 redirz = zc - chip_size;
@@ -211,25 +232,40 @@ public class NewPlacer
             {
                 found = true;
             }
-            AddAtMatrix(f_x, i, 0, -fx);
-            AddAtMatrix(f_z, i, 0, -fz);
+            if(!Double.isFinite(fx) || !Double.isFinite(fz))
+            {
+                throw new RuntimeException("NAN err");
+            }
+            AddAtMatrix(f_x, i, 0, fx);
+            AddAtMatrix(f_z, i, 0, fz);
         }
         return found;
     }
 
-    private static void MarkOverlapPos(List<Pair<Integer, Integer>> pos, CommandContext<ServerCommandSource> context, int y)
+    private static void MarkOverlapPos(HashMap<Pair<Integer, Integer>, Integer> pos, CommandContext<ServerCommandSource> context, int y)
     {
         var posw = BlockPosArgumentType.getBlockPos(context, "start_pos");
         var w = context.getSource().getWorld();
-        for (Pair<Integer, Integer> po : pos)
+        for (Map.Entry<Pair<Integer, Integer>, Integer> en : pos.entrySet())
         {
-            w.setBlockState(posw.add(po.getLeft(), y, po.getRight()), Blocks.RED_WOOL.getDefaultState());
+            var po = en.getKey();
+            for (int i = 1; i < en.getValue() && i < 20; i++)
+            {
+                w.setBlockState(posw.add(po.getLeft(), y + i - 1, po.getRight()), Blocks.RED_WOOL.getDefaultState());
+            }
         }
     }
 
     private static List<Pair<Integer, Integer>> GetOverlapPos(int[] x, int [] z)
     {
-        var ret = new HashMap<Pair<Integer, Integer>, List<Integer>>();
+        var ret = GetDensity(x, z);
+
+        return ret.entrySet().stream().filter(a -> a.getValue() > 1).map(Map.Entry::getKey).toList();
+    }
+
+    private static @NonNull HashMap<Pair<Integer, Integer>, Integer> GetDensity(int[] x, int[] z)
+    {
+        var ret = new HashMap<Pair<Integer, Integer>, Integer>();
 
         for (int i = 0; i < x.length; i++)
         {
@@ -240,13 +276,29 @@ public class NewPlacer
                 for (int i1 = 0; i1 < Z_CELL_SIZE; i1++)
                 {
                     var p = Pair.of(ClampVal(xstart + j, chip_size), ClampVal(zstart + i1, chip_size));
-                    var v = ret.computeIfAbsent(p, a -> new ArrayList<>());
-                    v.add(i);
+                    var v = ret.computeIfAbsent(p, a -> 0);
+                    v++;
+                    ret.put(p, v);
                 }
             }
         }
+        return ret;
+    }
 
-        return ret.entrySet().stream().filter(a -> a.getValue().size() > 1).map(Map.Entry::getKey).toList();
+    private static @NonNull HashMap<Pair<Integer, Integer>, Integer> GetDensityQuick(int[] x, int[] z)
+    {
+        var ret = new HashMap<Pair<Integer, Integer>, Integer>();
+
+        for (int i = 0; i < x.length; i++)
+        {
+            var xstart = x[i];
+            var zstart = z[i];
+            var p = Pair.of(xstart / X_CELL_SIZE, zstart / Z_CELL_SIZE);
+            var v = ret.computeIfAbsent(p, a -> 0);
+            v++;
+            ret.put(p, v);
+        }
+        return ret;
     }
 
     private static boolean CheckOverlap(int[] x, int [] z)
