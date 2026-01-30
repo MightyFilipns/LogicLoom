@@ -6,13 +6,10 @@ import com.mightyfilipns.chipmakermc.Placer;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import net.minecraft.block.Blocks;
-import net.minecraft.block.FacingBlock;
-import net.minecraft.block.PistonBlock;
 import net.minecraft.block.RedstoneWireBlock;
 import net.minecraft.command.argument.BlockPosArgumentType;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3i;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -148,7 +145,7 @@ public class TestCmds
         BlockPos d = BlockPosArgumentType.getBlockPos(context, "down");
         BlockPos p = BlockPosArgumentType.getBlockPos(context, "up");
         List<BlockPos> m = new ArrayList<>();
-        VerticalBuilder.BuildDownwards(context.getSource().getWorld(), d, p, Router.ocm_wire, Placer.last_pos, m);
+        VerticalBuilder.BuildDownwards(context.getSource().getWorld(), d, p);
         return 1;
     }
 

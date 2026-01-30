@@ -1,6 +1,7 @@
 package com.mightyfilipns.chipmakermc.Routing;
 
 import com.mojang.datafixers.types.templates.Check;
+import net.minecraft.block.Block;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.HorizontalFacingBlock;
 import net.minecraft.block.RepeaterBlock;
@@ -334,7 +335,7 @@ public class RedstoneWireBuilder
                     }
                     if(absz == 0)
                     {
-                        for (int j = Math.min(repp1.getX(), repp2.getX()); j < Math.max(repp2.getX(), repp1.getX()); j ++)
+                        for (int j = Math.min(repp1.getX(), repp2.getX()); j < Math.max(repp2.getX(), repp1.getX()); j++)
                         {
                             if(i2 % 16 == 0)
                             {
@@ -350,17 +351,11 @@ public class RedstoneWireBuilder
                         }
                     }
 
-                    w.setBlockState(repp1, Blocks.REPEATER.getDefaultState().with(HorizontalFacingBlock.FACING, dir).with(RepeaterBlock.DELAY, 4), 2 | 816);
+                    w.setBlockState(repp1, Blocks.REPEATER.getDefaultState().with(HorizontalFacingBlock.FACING, dir), 2 | 816);
                     w.setBlockState(repp2, Blocks.REPEATER.getDefaultState().with(HorizontalFacingBlock.FACING, dir), 2 | 816);
                 }
-                if(h.allpoints_pos != i)
-                {
-                    w.setBlockState(p1.withY(real_y + 1), Blocks.REDSTONE_WIRE.getDefaultState(), 2 | 816);
-                }
-                if(h.allpoints_pos != integer)
-                {
-                    w.setBlockState(p2.withY(real_y + 1), Blocks.REDSTONE_WIRE.getDefaultState(), 2 | 816);
-                }
+                w.setBlockState(p1.withY(real_y + 1), Blocks.REDSTONE_WIRE.getDefaultState());
+                w.setBlockState(p2.withY(real_y + 1), Blocks.REDSTONE_WIRE.getDefaultState());
                 for (BlockPos blockPos : rep)
                 {
                     if(blockPos.getY() == y)
@@ -391,6 +386,7 @@ public class RedstoneWireBuilder
             var absz = Math.abs(pr.getZ());
             var nor = new BlockPos(Integer.signum(pr.getX()), 0, Integer.signum(pr.getZ()));
             Direction dir = Direction.fromVector(nor, Direction.UP).getOpposite(); // Intentionally invalid fall back
+
             // It appears that sometimes that Lee algorithm that route if obstacles are found will put Steiner point in the path of other branches in the same tree causing problems
             boolean on_x = absz != 0;
             List<BlockPos> rep = null;
@@ -457,20 +453,17 @@ public class RedstoneWireBuilder
 
 
                 w.setBlockState(repp1, Blocks.REPEATER.getDefaultState().with(HorizontalFacingBlock.FACING, dir), 2 | 816);
-                w.setBlockState(repp2, Blocks.REPEATER.getDefaultState().with(HorizontalFacingBlock.FACING, dir).with(RepeaterBlock.DELAY, 4), 2 | 816);
+                w.setBlockState(repp2, Blocks.REPEATER.getDefaultState().with(HorizontalFacingBlock.FACING, dir), 2 | 816);
             }
-            if(i != 1)
-            {
-                w.setBlockState(p2.withY(real_y + 1), Blocks.REDSTONE_WIRE.getDefaultState(), 2 | 816);
-            }
-            w.setBlockState(p1.withY(real_y + 1), Blocks.REDSTONE_WIRE.getDefaultState(), 2 | 816);
-
+            w.setBlockState(p1.withY(real_y + 1), Blocks.REDSTONE_WIRE.getDefaultState());
+            w.setBlockState(p2.withY(real_y + 1), Blocks.REDSTONE_WIRE.getDefaultState());
         }
+        /*
         for (int i = 1; i < tpn.point_list.size() - 1; i++)
         {
             w.setBlockState(tpn.point_list.get(i).withY(y), Blocks.REDSTONE_WIRE.getDefaultState(), 2 | 816);
-        }
-        // w.updateNeighbors();
+        }*/
+        w.updateNeighbors(tpn.point_list.getFirst().withY(real_y + 1), Blocks.REDSTONE_WIRE);
     }
 
     private static @NonNull List<BlockPos> GetIntersectorsZ(List<BlockPos> h, BlockPos p1, BlockPos p2) {

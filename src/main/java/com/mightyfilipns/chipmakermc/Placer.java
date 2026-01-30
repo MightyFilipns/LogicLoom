@@ -27,9 +27,9 @@ public class Placer
     public final static int X_CELL_SIZE = 6;
     public final static int Y_CELL_SIZE = 4;
 
-    public static double force_mul = 0.04D;
-    public static int max_iter = 140;
-    public static int chip_size = 200;
+    public static double force_mul = 0.05D;
+    public static int max_iter = 137;
+    public static int chip_size = 400;
 
     public static BlockPos last_pos = new BlockPos(74, -12, -189);
 
@@ -40,8 +40,8 @@ public class Placer
 
     public static HashMap<Integer, BlockPos> rel_port_pos = null;
     public static Map<CellInfo, BlockPos> g_mp = null;
-    static int[] g_xsa = null;
-    static int[] g_zsa = null;
+    public static int[] g_xsa = null;
+    public static int[] g_zsa = null;
     public static int PlaceDesign(CommandContext<ServerCommandSource> context)
     {
         var des = Chipmakermc.loaded_design;
@@ -67,7 +67,7 @@ public class Placer
         var mod = (JsonDesign.DesignModule)des.modules.values().toArray()[0];
 
         PlaceMtx(g_xsa, g_zsa, context, 0, mod, g_mp);
-        RoutingPrep.SetupCellPorts(context, g_mp);
+        // RoutingPrep.SetupCellPorts(context, g_mp);
 
         return 1;
     }

@@ -32,7 +32,7 @@ public class LeeRouter
         var max = Pair.of(Math.max(start.getX(), end.getX()), Math.max(start.getZ(), end.getZ()));
         var min = Pair.of(Math.min(start.getX(), end.getX()), Math.min(start.getZ(), end.getZ()));
 
-        int tol = 23;
+        int tol = 9;
         while(!value_grid.containsKey(endp))
         {
             lastv++;

@@ -4,6 +4,7 @@ import com.mightyfilipns.chipmakermc.JsonDesign;
 import net.minecraft.util.math.BlockPos;
 import org.apache.commons.lang3.tuple.Pair;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
@@ -29,18 +30,19 @@ public class Misc
         ret.add(AsPair(p1));
         if (dir == JsonDesign.PortDirection.Input)
         {
-            pts2 = GetSurroundingPoints(AsPair(p1.add(-1, 0, 0)));
-            ret.add(AsPair(p1.add(-1, 0, 0)));
+            pts2 = GetSurroundingPoints(AsPair(p1.add(1, 0, 0)));
+            ret.add(AsPair(p1.add(1, 0, 0)));
         }
         else // Output
         {
-            pts2 = GetSurroundingPoints(AsPair(p1.add(0, 0, 1)));
-            ret.add(AsPair(p1.add(0, 0, 1)));
+            pts2 = new ArrayList<>();
+            pts2.add(Pair.of(p1.getX() - 1, p1.getZ() + 1));
+            pts2.add(Pair.of(p1.getX() - 1, p1.getZ() - 1));
         }
         ret.addAll(pts2);
         return ret;
     }
-    public static HashSet<Pair<Integer, Integer>> MakeObstMapFromPortRemove(BlockPos p1, JsonDesign.PortDirection dir)
+    public static HashSet<Pair<Integer, Integer>> MakeObstMapFromPortRemove(BlockPos p1, JsonDesign.PortDirection dir, HashSet<Pair<Integer, Integer>> gobstm)
     {
         var pts1 = GetSurroundingPoints(AsPair(p1));
         HashSet<Pair<Integer, Integer>> ret = new HashSet<>(pts1);
@@ -48,19 +50,33 @@ public class Misc
         ret.add(AsPair(p1));
         if (dir == JsonDesign.PortDirection.Input)
         {
-            pts2 = GetSurroundingPoints(AsPair(p1.add(-1, 0, 0)));
-            ret.add(AsPair(p1.add(-1, 0, 0)));
+            pts2 = GetSurroundingPoints(AsPair(p1.add(1, 0, 0)));
+            ret.add(AsPair(p1.add(1, 0, 0)));
         }
         else // Output
         {
-            pts2 = GetSurroundingPoints(AsPair(p1.add(0, 0, 1)));
-            ret.add(AsPair(p1.add(0, 0, 1)));
+            pts2 = new ArrayList<>();
+            pts2.add(Pair.of(p1.getX() - 1, p1.getZ() + 1));
+            pts2.add(Pair.of(p1.getX() - 1, p1.getZ() - 1));
         }
+        ret.addAll(pts2);
         if(dir == JsonDesign.PortDirection.Input)
+        {
+            ret.remove(Pair.of(p1.getX() + 1, p1.getZ()));
+        }
+        if (gobstm.contains(Pair.of(p1.getX() - 1, p1.getZ())))
         {
             ret.remove(Pair.of(p1.getX() - 1, p1.getZ()));
         }
-        ret.addAll(pts2);
+        if (gobstm.contains(Pair.of(p1.getX() + 2, p1.getZ())))
+        {
+            ret.remove(Pair.of(p1.getX() + 2, p1.getZ()));
+        }
         return ret;
+    }
+
+    static boolean AxisDiffer(BlockPos p1, BlockPos p2)
+    {
+        return p1.getX() != p2.getX() && p1.getZ() != p2.getZ();
     }
 }

@@ -1,30 +1,24 @@
 package com.mightyfilipns.chipmakermc.Routing;
 
+import com.google.common.collect.Table;
+import com.mightyfilipns.chipmakermc.CellInfo;
+import com.mightyfilipns.chipmakermc.CellType;
 import com.mightyfilipns.chipmakermc.JsonDesign;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import org.apache.commons.lang3.tuple.Pair;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
+import java.util.*;
 
 public class ObstacleFixer
 {
 
-    static void FixObstaclesHyperGraph(HyperGraphNet hp, HashSet<Pair<Integer, Integer>> port_map, ServerWorld w)
+    static void FixObstaclesHyperGraph(HyperGraphNet hp, HashSet<Pair<Integer, Integer>> port_map, ServerWorld w, HashSet<Pair<Integer, Integer>> gobstm)
     {
         HashSet<Pair<Integer, Integer>> obst_points = new HashSet<>();
         hp.pin_port_pos.stream().map(a -> Misc.MakeObstMapFromPortRemove(a,
-                a == hp.pin_port_pos.get(hp.out_port_pos) ? JsonDesign.PortDirection.Output : JsonDesign.PortDirection.Input)).forEach(obst_points::addAll);
+                a == hp.pin_port_pos.get(hp.out_port_pos) ? JsonDesign.PortDirection.Output : JsonDesign.PortDirection.Input, gobstm)).forEach(obst_points::addAll);
         port_map.removeAll(obst_points);
-        // hp.pin_port_pos.stream().map(a -> Pair.of(a.getX(), a.getZ())).toList().forEach(port_map::remove);
-        /*var d = hp.pin_port_pos.stream()
-                .<HashSet<Pair<Integer, Integer>>>mapMulti((a, c)
-                        -> c.accept(Misc.MakeObstMapFromPort(a,
-                        a == hp.pin_port_pos.get(hp.out_port_pos) ? JsonDesign.PortDirection.Output : JsonDesign.PortDirection.Input)
-                )).toList();*/
 
         List<List<Integer>> adj_list = new ArrayList<>();
         List<BlockPos> all_points = new ArrayList<>();
@@ -55,7 +49,7 @@ public class ObstacleFixer
             var mid1 = new BlockPos(startp.getX(), 0, endp.getZ());
             var mid2 = new BlockPos(endp.getX(), 0, startp.getZ());
 
-            if(!AxisDiffer(startp, endp) && !IntersectsObstacles(startp, endp, port_map))
+            if(!Misc.AxisDiffer(startp, endp) && !IntersectsObstacles(startp, endp, port_map))
             {
                 int si;
                 int ei;
@@ -112,7 +106,6 @@ public class ObstacleFixer
 
         hp.SetAdjList(adj_list, all_points);
         port_map.addAll(obst_points);
-        //port_map.addAll(hp.pin_port_pos.stream().map(a -> Pair.of(a.getX(), a.getZ())).toList());
     }
 
     public static void ConnBranches(List<List<Integer>> adj_list, int si, int mi)
@@ -155,8 +148,17 @@ public class ObstacleFixer
         return false;
     }
 
-    static boolean AxisDiffer(BlockPos p1, BlockPos p2)
+    public static HashSet<Pair<Integer, Integer>> GetGlobalObstMap(Map<CellInfo, BlockPos> cellmap)
     {
-        return p1.getX() != p2.getX() && p1.getZ() != p2.getZ();
+        var obst = new HashSet<Pair<Integer, Integer>>();
+        for (Map.Entry<CellInfo, BlockPos> en : cellmap.entrySet())
+        {
+            // Has only a single input
+            if (en.getKey().type == CellType.NOT)
+                continue;
+            var blockpos = en.getValue().add(1,0,5);
+            obst.add(Misc.AsPair(blockpos));
+        }
+        return obst;
     }
 }

@@ -22,15 +22,34 @@ import java.util.*;
 
 import static com.mightyfilipns.chipmakermc.Placer.*;
 import static com.mightyfilipns.chipmakermc.Placment.PlacerMisc.*;
+import static com.mightyfilipns.chipmakermc.Placment.TetrisLegalizer.Legalize;
 import static java.lang.Math.*;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 
 public class NewPlacer
 {
-    public final static int Z_CELL_SIZE = 7;
+    public final static int Z_CELL_SIZE = 8;
     public final static int X_CELL_SIZE = 6;
     public final static int Y_CELL_SIZE = 4;
+
+    public static int PlaceCache(CommandContext<ServerCommandSource> context)
+    {
+        if(g_zsa == null || g_xsa == null || g_mp == null)
+        {
+            context.getSource().sendError(Text.literal("Cache empty"));
+            return 0;
+        }
+
+        var des = Chipmakermc.loaded_design;
+        var mod = (JsonDesign.DesignModule)des.modules.values().toArray()[0];
+
+        var pos = BlockPosArgumentType.getBlockPos(context, "start_pos");
+
+        PlaceCells(g_xsa, g_zsa, context, pos, mod, g_mp);
+
+        return 1;
+    }
 
     public static int PlaceDesign(CommandContext<ServerCommandSource> context)
     {
@@ -41,7 +60,7 @@ public class NewPlacer
         int min_area = mod.cells.size() * CELL_AREA;
         if (min_area > avaliable_area)
         {
-            context.getSource().sendError(Text.literal(String.format("Build area too small: Avaible area (X: %d * Z: %d) = %d : Minimum area: %d", chip_size, chip_size, avaliable_area, min_area)));
+            context.getSource().sendError(Text.literal(String.format("Build area too small: Available area (X: %d * Z: %d) = %d : Minimum area: %d", chip_size, chip_size, avaliable_area, min_area)));
             return 0;
         }
 
@@ -56,7 +75,7 @@ public class NewPlacer
         Matrix c_x = new Matrix(mod.cells.size(), 1);
         Matrix c_z = new Matrix(mod.cells.size(), 1);
 
-        var pr = ConnMatrixBuilder.GetConnectivityMatrixHessian2();
+        var pr = ConnMatrixBuilder.GetConnectivityMatrixHessian3();
         Matrix connection_m = pr.getLeft();
 
         var pos = BlockPosArgumentType.getBlockPos(context, "start_pos");
@@ -64,22 +83,17 @@ public class NewPlacer
 
         int x_counter = 0;
 
-        var abs_port_pos = new HashMap<>();
+        rel_port_pos = new HashMap<>();
 
-        SetupPorts(mod, x_counter, pos, w, pr, abs_port_pos, c_x, c_z, connection_m);
+        SetupPorts(mod, x_counter, pos, w, pr, rel_port_pos, c_x, c_z, connection_m);
 
         // TODO: add size for x and z
 
-        //AddFixed(connection_m, c_x, c_z, 0,             chip_size, 0, 2);
-        //AddFixed(connection_m, c_x, c_z, chip_size / 2, chip_size , 0 ,2);
-        //AddFixed(connection_m, c_x, c_z,  chip_size,          chip_size, 0, 2);
-        // AddFixedVirtualCell(connection_m, c_x, c_z,  chip_size / 2, chip_size /2, 1);
-        //AddFixedVirtualCell(connection_m, c_x, c_z,  chip_size, chip_size / 2, Double.MIN_VALUE);
+        double oldfm = force_mul;
 
-        //AddFixedVirtualCell(connection_m, c_x, c_z,  chip_size, 0);
-        AddFixedVirtualCell(connection_m, c_x, c_z,  (chip_size) / 2 , (chip_size ) / 2, 1);
-        //AddFixedVirtualCell(connection_m, c_x, c_z, 0, chip_size);
-        // AddFixedVirtualCell(connection_m, c_x, c_z, 0, 0);
+        AddFixedVirtualCell(connection_m, c_x, c_z,  (int)(chip_size / 1.5D), (int)(chip_size / 1.5D), 1);
+        AddFixedVirtualCell(connection_m, c_x, c_z,  (int)(chip_size / 1.5D), 0, 1);
+        AddFixedVirtualCell(connection_m, c_x, c_z,  0, (int)(chip_size / 1.5D), 1);
 
         Matrix x_sol = null;
         Matrix z_sol = null;
@@ -99,11 +113,12 @@ public class NewPlacer
             z_sol = connection_m.solve(c_z.plus(f_z));
 
             // Sanity check
-            if(iter > max_iter)
+            if(iter > max_iter || obb)
             {
+                Legalize(xsa, zsa);
                 var d = GetDensity(xsa, zsa);
-                context.getSource().sendFeedback(() -> Text.literal("Max iter reached - " + max_iter + " Overlaps: " + d.size()), false);
-                MarkOverlapPos(d, context, 1);
+                int cnt = MarkOverlapPos(d, context, 1);
+                context.getSource().sendFeedback(() -> Text.literal("Max iter reached - " + max_iter + " Overlaps: " + cnt), false);
                 break;
             }
             if(!Arrays.stream(z_sol.getColumnPackedCopy()).allMatch(Double::isFinite))
@@ -111,7 +126,7 @@ public class NewPlacer
                 throw new RuntimeException("Err");
             }
 
-            xsa = RoundMtxSol(x_sol, 1);// RoundMtxSol(x_sol, X_CELL_SIZE);
+            xsa = RoundMtxSol(x_sol, 1);
             zsa = RoundMtxSol(z_sol, 1);
 
             has_overlap = CheckOverlap(xsa, zsa);
@@ -128,10 +143,47 @@ public class NewPlacer
             iter++;
         } while(has_overlap || obb);
 
-        PlaceDebug(xsa, zsa, context, 0);
+
+        if(do_actual_place)
+            PlaceCells(xsa, zsa, context, pos, mod, mp);
+        else
+            PlaceDebug(xsa, zsa, context, 0);
+
+        g_mp = mp;
+        g_xsa = xsa;
+        g_zsa = zsa;
+        force_mul = oldfm;
     }
 
     static final int CELL_AREA = X_CELL_SIZE * Z_CELL_SIZE;
+
+    private static void PlaceCells(int[] xvec, int[] zvec, CommandContext<ServerCommandSource> context, BlockPos pos, JsonDesign.DesignModule mod, Map<CellInfo, BlockPos> mp)
+    {
+        List<CellInfo> v = mod.cells.values().stream().sorted(Comparator.comparingInt(a -> a.cell_ID)).toList();
+        for (int i = 0; i < xvec.length; i++)
+        {
+            int x_offset = max(min(xvec[i], chip_size), 0);
+            int z_offset = max(min(zvec[i], chip_size), 0);
+            PlaceCellAt(x_offset, z_offset, i, v, context, pos, mp);
+        }
+    }
+
+    static void PlaceCellAt(int xoff, int zoff, int i, List<CellInfo> cil, CommandContext<ServerCommandSource> context, BlockPos pos, Map<CellInfo, BlockPos> mp)
+    {
+        var ci = cil.get(i);
+        var model_pos = Chipmakermc.celltable.get(ci.type);
+
+        BlockPos paste_pos = pos.add(xoff, 0, zoff);
+        mp.put(ci, paste_pos);
+        var w = context.getSource().getWorld();
+        for (int x = 0; x < X_CELL_SIZE; x++) {
+            for (int y = 0; y < Y_CELL_SIZE; y++) {
+                for (int z = 0; z < Z_CELL_SIZE; z++) {
+                    w.setBlockState(paste_pos.add(x,y,z), w.getBlockState(model_pos.add(x,y,z)));
+                }
+            }
+        }
+    }
 
     private static void PlaceDebug(int[] xvec, int[] zvec, CommandContext<ServerCommandSource> context, int y_offset)
     {
@@ -160,17 +212,23 @@ public class NewPlacer
         return max(min(xvec, chipsz), 0);
     }
 
+    // TODO: Implement this using Barnes-Hut quad tress.
     private static void FixOverLapPossion(Matrix xsol, Matrix zsol, Matrix f_x, Matrix f_z, int[] xsa, int[] zsa)
     {
+        int cc = xsol.getRowDimension();
         HashMap<Pair<Integer, Integer>, Integer> density = GetDensityQuick(xsa, zsa); //GetDensity(xsa, zsa);
-        for (int i = 0; i < xsol.getRowDimension(); i++)
+        Matrix nfx = new Matrix(cc, 1);
+        Matrix nfz = new Matrix(cc, 1);
+        double absmaxx = 0;
+        double absmaxz = 0;
+        for (int i = 0; i < cc; i++)
         {
             double x = xsol.get(i,0);
             double z = zsol.get(i,0);
 
             double force_sumx = 0;
             double force_sumz = 0;
-            for (int j = 0; j < xsol.getRowDimension(); j++)
+            for (int j = 0; j < cc; j++)
             {
                 if(i == j)
                     continue;
@@ -197,15 +255,16 @@ public class NewPlacer
                     force_sumz += (ld * (z - z2)) / euclidean_dist;
                 }
             }
-            if(!Double.isNaN(force_sumx))
-            {
-                AddAtMatrix(f_x, i, 0, force_sumx * force_mul);
-            }
-            if(!Double.isNaN(force_sumz))
-            {
-                AddAtMatrix(f_z, i, 0, force_sumz * force_mul);
-            }
+            absmaxx = max(absmaxx, abs(force_sumx));
+            absmaxz = max(absmaxz, abs(force_sumz));
+            nfx.set(i, 0, force_sumx);
+            nfz.set(i, 0, force_sumz);
         }
+        var norx = nfx.times(1/absmaxx).times(force_mul);
+        var norz = nfz.times(1/absmaxz).times(force_mul);
+        f_x.plusEquals(norx);
+        f_z.plusEquals(norz);
+        force_mul *= 1.047;
     }
 
     private static boolean FixOutOfBounds(Matrix xsol, Matrix zsol, Matrix f_x, Matrix f_z, int[] xsa, int[] zsa)
@@ -242,25 +301,21 @@ public class NewPlacer
         return found;
     }
 
-    private static void MarkOverlapPos(HashMap<Pair<Integer, Integer>, Integer> pos, CommandContext<ServerCommandSource> context, int y)
+    private static int MarkOverlapPos(HashMap<Pair<Integer, Integer>, Integer> pos, CommandContext<ServerCommandSource> context, int y)
     {
         var posw = BlockPosArgumentType.getBlockPos(context, "start_pos");
         var w = context.getSource().getWorld();
+        int cnt = 0;
         for (Map.Entry<Pair<Integer, Integer>, Integer> en : pos.entrySet())
         {
             var po = en.getKey();
             for (int i = 1; i < en.getValue() && i < 20; i++)
             {
                 w.setBlockState(posw.add(po.getLeft(), y + i - 1, po.getRight()), Blocks.RED_WOOL.getDefaultState());
+                cnt++;
             }
         }
-    }
-
-    private static List<Pair<Integer, Integer>> GetOverlapPos(int[] x, int [] z)
-    {
-        var ret = GetDensity(x, z);
-
-        return ret.entrySet().stream().filter(a -> a.getValue() > 1).map(Map.Entry::getKey).toList();
+        return cnt;
     }
 
     private static @NonNull HashMap<Pair<Integer, Integer>, Integer> GetDensity(int[] x, int[] z)
@@ -322,7 +377,7 @@ public class NewPlacer
         return false;
     }
 
-    private static void SetupPorts(JsonDesign.DesignModule mod, int x_counter, BlockPos pos, ServerWorld w, Triple<Matrix, Map<Integer, List<AbstractCell>>, List<Pair<AbstractCell, AbstractCell>>> pr, HashMap<Object, Object> abs_port_pos, Matrix c_x, Matrix c_z, Matrix connection_m)
+    private static void SetupPorts(JsonDesign.DesignModule mod, int x_counter, BlockPos pos, ServerWorld w, Pair<Matrix, Map<Integer, List<AbstractCell>>> pr, HashMap<Integer, BlockPos> abs_port_pos, Matrix c_x, Matrix c_z, Matrix connection_m)
     {
         int z = -1;
         for (Map.Entry<String, JsonDesign.DesignPortInfo> value : mod.ports.entrySet())
@@ -336,16 +391,11 @@ public class NewPlacer
 
                 SetPortSignAndBlock(w, value, bit, npos);
 
-                var conn = pr.getMiddle().get(bit).stream().mapToInt(a -> a.cell_ID).toArray();
+                var conn = pr.getRight().get(bit).stream().mapToInt(a -> a.cell_ID).toArray();
                 abs_port_pos.put(bit, npos);
                 for (int i : conn)
                 {
                     AddFixed(connection_m, c_x, c_z, x , z, i, 1);
-
-                    /*
-                    AddAtMatrix(c_x, i, 0, x);
-                    AddAtMatrix(c_z, i, 0, z);
-                    AddAtMatrix(connection_m, i, i, 1.1D);*/
                 }
 
                 x_counter += 1;
@@ -355,7 +405,6 @@ public class NewPlacer
 
     private static void SetPortSignAndBlock(ServerWorld w, Map.Entry<String, JsonDesign.DesignPortInfo> value, Integer bit, BlockPos npos)
     {
-        w.setBlockState(npos, Blocks.REDSTONE_WIRE.getDefaultState());
         w.setBlockState(npos.add(0, 0, -1), value.getValue().direction == JsonDesign.PortDirection.Input ?  Blocks.RED_WOOL.getDefaultState() : Blocks.REDSTONE_LAMP.getDefaultState());
         w.setBlockState(npos.add(0, 1, -1), Blocks.OAK_SIGN.getDefaultState().with(SignBlock.ROTATION, 8));
         ((SignBlockEntity) w.getBlockEntity(npos.add(0,1,-1))).setText(new SignText().withMessage(1, Text.of(String.format("%s - %d", value.getKey(), bit))), true);

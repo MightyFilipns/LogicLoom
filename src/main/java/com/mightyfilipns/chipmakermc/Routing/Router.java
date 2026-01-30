@@ -73,6 +73,8 @@ public class Router
         var hy = HandleHyperGraphs(hypergraph, cellmap, port_rel_pos);
         var tpn = HandleTwoPinNets(twopin, cellmap, port_rel_pos);
 
+        var global_obst_map = ObstacleFixer.GetGlobalObstMap(cellmap);
+
         var w = context.getSource().getWorld();
 
         // HashSet<Triple<Integer, Integer, Integer>> route_map = new HashSet<>();
@@ -82,9 +84,6 @@ public class Router
         {
             port_map.addAll(Misc.MakeObstMapFromPort(tp.p1, tp.p1dir));
             port_map.addAll(Misc.MakeObstMapFromPort(tp.p2, tp.p1dir.Invert()));
-
-            // port_map.add(Pair.of(tp.p1.getX(), tp.p1.getZ()));
-            // port_map.add(Pair.of(tp.p2.getX(), tp.p2.getZ()));
         }
 
         for (HyperGraphNet hyperGraphNet : hy)
@@ -95,11 +94,6 @@ public class Router
                 JsonDesign.PortDirection dir = i == hyperGraphNet.out_port_pos ? JsonDesign.PortDirection.Output : JsonDesign.PortDirection.Input;
                 port_map.addAll(Misc.MakeObstMapFromPort(pinPortPo, dir));
             }
-            /*
-            for (BlockPos pinPortPo : hyperGraphNet.pin_port_pos)
-            {
-                port_map.add(Pair.of(pinPortPo.getX(), pinPortPo.getZ()));
-            }*/
         }
 
         int starty = pos.getY() + Placer.Y_CELL_SIZE;
@@ -116,7 +110,7 @@ public class Router
         for (HyperGraphNet hp : hy)
         {
             System.out.println("Processing hypergraph " + (i + 1) + " of " + hy.size());
-            ObstacleFixer.FixObstaclesHyperGraph(hp, port_map, w);
+            ObstacleFixer.FixObstaclesHyperGraph(hp, port_map, w, global_obst_map);
             System.out.println("Routing hypergraph " + (i + 1) + " of " + hy.size());
             RouteHyperGraph(hp, 0, occupied_map, occupied_map_wire);
             System.out.println("Building hypergraph " + (i + 1) + " of " + hy.size());
@@ -128,14 +122,13 @@ public class Router
         for (TwoPinNet twoPinNet : tpn)
         {
             System.out.println("Processing two pin net " + (i + 1) + " of " + tpn.size());
-            FixObstacleTwoPinNet(twoPinNet, port_map);
+            FixObstacleTwoPinNet(twoPinNet, port_map, global_obst_map);
             System.out.println("Routing two pin net " + (i + 1) + " of " + tpn.size());
             RouteTwoPinNet(twoPinNet, 0, occupied_map, occupied_map_wire);
             System.out.println("Building two pin net " + (i + 1) + " of " + tpn.size());
             BuildTwoPinNet(twoPinNet, w, starty + twoPinNet.y_pos * 2);
             i++;
         }
-        /*
         System.out.println("Building hypergraph vertical connectors");
         for (HyperGraphNet hyperGraphNet : hy)
         {
@@ -148,7 +141,7 @@ public class Router
                 }
                 else
                 {
-                    VerticalBuilder.BuildDownwards(w, hn, hn.withY(starty + hyperGraphNet.y_pos * 2), occupied_map_wire, pos, rep_map);
+                    VerticalBuilder.BuildDownwards(w, hn, hn.withY(starty + hyperGraphNet.y_pos * 2));
                 }
             }
         }
@@ -158,14 +151,14 @@ public class Router
             if (tp.p1dir == JsonDesign.PortDirection.Input)
             {
                 VerticalBuilder.BuildUpwards(w, tp.p2, tp.p2.withY(starty + tp.y_pos * 2), occupied_map_wire, pos, rep_map);
-                VerticalBuilder.BuildDownwards(w, tp.p1, tp.p1.withY(starty + tp.y_pos * 2), occupied_map_wire, pos, rep_map);
+                VerticalBuilder.BuildDownwards(w, tp.p1, tp.p1.withY(starty + tp.y_pos * 2));
             }
             else
             {
                 VerticalBuilder.BuildUpwards(w, tp.p1, tp.p1.withY(starty + tp.y_pos * 2), occupied_map_wire, pos, rep_map);
-                VerticalBuilder.BuildDownwards(w, tp.p2, tp.p2.withY(starty + tp.y_pos * 2), occupied_map_wire, pos, rep_map);
+                VerticalBuilder.BuildDownwards(w, tp.p2, tp.p2.withY(starty + tp.y_pos * 2));
             }
-        }*/
+        }
         System.out.println("Building hypergraph net wires");
         for (HyperGraphNet hyperGraphNet : hy)
         {
@@ -173,10 +166,12 @@ public class Router
             RedstoneWireBuilder.FixHypergraphAdjList(0, hyperGraphNet);
             RedstoneWireBuilder.BuildHypergraph(w, hyperGraphNet, rep_map, starty);
         }
+        i = 0;
         System.out.println("Building two pin net wires");
         for (TwoPinNet twoPinNet : tpn)
         {
             RedstoneWireBuilder.BuildTwoPin(w, twoPinNet, rep_map, starty);
+            i++;
         }
 
         /*
@@ -278,10 +273,10 @@ public class Router
         tpn.y_pos = i;
     }
 
-    private static void FixObstacleTwoPinNet(TwoPinNet tpn, HashSet<Pair<Integer, Integer>> port_map)
+    private static void FixObstacleTwoPinNet(TwoPinNet tpn, HashSet<Pair<Integer, Integer>> port_map, HashSet<Pair<Integer, Integer>> gobstm)
     {
-        var pr1 = Misc.MakeObstMapFromPortRemove(tpn.p1, tpn.p1dir);
-        var pr2 = Misc.MakeObstMapFromPortRemove(tpn.p2, tpn.p1dir.Invert());
+        var pr1 = Misc.MakeObstMapFromPortRemove(tpn.p1, tpn.p1dir, gobstm);
+        var pr2 = Misc.MakeObstMapFromPortRemove(tpn.p2, tpn.p1dir.Invert(), gobstm);
         var pr3 = new HashSet<>(pr1);
         pr3.addAll(pr2);
         port_map.removeAll(pr3);
@@ -294,7 +289,22 @@ public class Router
         boolean mid1_possible = !IntersectsObstacles(p1, mid1, port_map) && !IntersectsObstacles(mid1, p2, port_map);
         boolean mid2_possible = !IntersectsObstacles(p1, mid2, port_map) && !IntersectsObstacles(mid2, p2, port_map);
 
-        if(mid2_possible || mid1_possible)
+        if(!Misc.AxisDiffer(p1, p2) && !IntersectsObstacles(p1, p2, port_map))
+        {
+            List<List<Integer>> adjl = new ArrayList<>();
+            adjl.add(new ArrayList<>());
+            adjl.add(new ArrayList<>());
+
+            List<BlockPos> blks = new ArrayList<>();
+            blks.add(p1);
+            blks.add(p2);
+
+            ConnBranches(adjl, 0 ,1);
+
+            tpn.adj_list = adjl;
+            tpn.point_list = tpn.p1dir == JsonDesign.PortDirection.Output ? blks : blks.reversed();
+        }
+        else if(mid2_possible || mid1_possible)
         {
             var fmid = mid1_possible ? mid1 : mid2;
 
@@ -525,7 +535,7 @@ public class Router
     {
         flu = new Flute();
         try {
-            flu.readLUT(in1 ,in2);
+            flu.readLUT(in1, in2);
         } catch (IOException e) {
             System.out.println("Failed to load FLUTE library lookup tables");
         }
@@ -549,9 +559,9 @@ public class Router
             }
             var cell_pos = cellmap.get(b);
             return switch (pin_name) {
-                case "A" -> cell_pos.add(0, 0, 5);
-                case "B" -> cell_pos.add(3, 0, 5);
-                case "Y" -> cell_pos.add(-1, 0, 0); //cell_pos.add(2, 0, 0); -- currently always set to the right side
+                case "A" -> cell_pos.add(-1, 0, 5);
+                case "B" -> cell_pos.add(2, 0, 5);
+                case "Y" -> cell_pos.add(-1, 0, 0);
                 default -> throw new RuntimeException("Invalid pin name: " + pin_name);
             };
         }

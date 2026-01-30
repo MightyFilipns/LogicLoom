@@ -23,26 +23,36 @@ public class VerticalBuilder
         var starty = down.getY() + Placer.Y_CELL_SIZE;
         var ylevel = (upper.getY() - starty) / 2;
         w.setBlockState(down, Blocks.LIME_WOOL.getDefaultState(), NO_UPDATE);
-        var d2 = down.add(0, 0, 1);
-        w.setBlockState(d2, Blocks.REDSTONE_WALL_TORCH.getDefaultState().with(WallRedstoneTorchBlock.FACING, Direction.SOUTH));
-        w.setBlockState(d2.add(0, 1, 0), Blocks.LIME_WOOL.getDefaultState(), NO_UPDATE);
-        w.setBlockState(down.add(0, 1, 0), Blocks.REDSTONE_WALL_TORCH.getDefaultState().with(WallRedstoneTorchBlock.FACING, Direction.NORTH));
+        if(ylevel % 2 == 1)
+        {
+            var d2 = down.add(0, 0, 1);
+            w.setBlockState(d2, Blocks.REDSTONE_WALL_TORCH.getDefaultState().with(WallRedstoneTorchBlock.FACING, Direction.SOUTH));
+            w.setBlockState(d2.add(0, 1, 0), Blocks.LIME_WOOL.getDefaultState(), NO_UPDATE);
+            w.setBlockState(down.add(0, 1, 0), Blocks.REDSTONE_WALL_TORCH.getDefaultState().with(WallRedstoneTorchBlock.FACING, Direction.NORTH));
+        }
+        else
+        {
+            w.setBlockState(down.add(0, 1, 0), Blocks.REDSTONE_TORCH.getDefaultState());
+        }
+
         int ry = down.getY() + 2;
-        for (int i = 0; i <= (ylevel & ~1); i++)
+        for (int i = 0; i <= ylevel; i++)
         {
             w.setBlockState(down.withY(ry + i * 2), Blocks.LIME_WOOL.getDefaultState(), NO_UPDATE);
             w.setBlockState(down.withY(ry + i * 2 + 1), Blocks.REDSTONE_TORCH.getDefaultState());
         }
+
+        /*
         int ey = ry + ylevel * 2;
-        if (ylevel % 2 == 1)
+        if ()
         {
             w.setBlockState(down.withY(ey), Blocks.LIME_WOOL.getDefaultState(), NO_UPDATE);
             w.setBlockState(d2.withY(ey), Blocks.REDSTONE_WALL_TORCH.getDefaultState().with(WallRedstoneTorchBlock.FACING, Direction.SOUTH), NO_UPDATE);
             w.setBlockState(d2.withY(ey + 1),Blocks.LIME_WOOL.getDefaultState(), NO_UPDATE);
             w.setBlockState(down.withY(ey + 1), Blocks.REDSTONE_WALL_TORCH.getDefaultState().with(WallRedstoneTorchBlock.FACING, Direction.NORTH));
-        }
+        }*/
     }
-    public static void BuildDownwards(ServerWorld w, BlockPos down, BlockPos upper, List<HashSet<Pair<Integer, Integer>>> occupied_map, BlockPos start, List<BlockPos> rep_map)
+    public static void BuildDownwards(ServerWorld w, BlockPos down, BlockPos upper)
     {
         boolean side = true;
         for (int i = upper.getY(); i > down.getY(); i -= 2)
