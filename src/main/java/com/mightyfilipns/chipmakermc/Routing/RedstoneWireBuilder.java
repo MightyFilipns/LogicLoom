@@ -14,12 +14,12 @@ import java.util.List;
 
 public class RedstoneWireBuilder
 {
-    public static void BuildHypergraph(ServerWorld w, HyperGraphNet h, List<BlockPos> rep_map, int start_y)
+    public static void BuildHypergraph(ServerWorld w, HyperGraphNet h, int start_y)
     {
         int real_y = start_y + h.y_pos * 2;
         boolean[] visited = new boolean[h.adj_list.size()];
         visited[h.allpoints_pos] = true;
-        DFS_build(h.allpoints_pos, w, h, rep_map, real_y, visited);
+        DFS_build(h.allpoints_pos, w, h, real_y, visited);
         for (int i = 0; i < visited.length; i++)
         {
             if(!visited[i])
@@ -244,7 +244,7 @@ public class RedstoneWireBuilder
         adj_list.get(mi).remove((Object)si);
     }
 
-    public static void DFS_build(int i, ServerWorld w, HyperGraphNet h, List<BlockPos> rep_map, int real_y, boolean[] visited)
+    public static void DFS_build(int i, ServerWorld w, HyperGraphNet h, int real_y, boolean[] visited)
     {
         var p1 = h.all_points.get(i);
         for (Integer integer : h.adj_list.get(i))
@@ -263,13 +263,10 @@ public class RedstoneWireBuilder
             // It appears that sometimes that Lee algorithm that route if obstacles are found will put Steiner point in the path of other branches in the same tree causing problems
             boolean on_x = absz != 0;
             List<BlockPos> g = null;
-            List<BlockPos> rep = null;
             if (on_x) {
                 g = GetIntersectorsX(h.all_points, p1, p2);
-                rep = GetIntersectorsX(rep_map, p1, p2);
             } else {
                 g = GetIntersectorsZ(h.all_points, p1, p2);
-                rep = GetIntersectorsZ(rep_map, p1, p2);
             }
             if (g.size() == 2)
             {
@@ -327,14 +324,7 @@ public class RedstoneWireBuilder
                 }
                 w.setBlockState(p1.withY(real_y + 1), Blocks.REDSTONE_WIRE.getDefaultState());
                 w.setBlockState(p2.withY(real_y + 1), Blocks.REDSTONE_WIRE.getDefaultState());
-                for (BlockPos blockPos : rep)
-                {
-                    if(blockPos.getY() == y)
-                    {
-                        w.setBlockState(blockPos.withY(real_y + 1), Blocks.REPEATER.getDefaultState().with(HorizontalFacingBlock.FACING, dir), 2 | 816);
-                    }
-                }
-                DFS_build(integer, w, h, rep_map, real_y, visited);
+                DFS_build(integer, w, h, real_y, visited);
             }
             else
             {
@@ -343,7 +333,7 @@ public class RedstoneWireBuilder
         }
     }
 
-    public static void BuildTwoPin(ServerWorld w, TwoPinNet tpn, List<BlockPos> rep_map, int start_y)
+    public static void BuildTwoPin(ServerWorld w, TwoPinNet tpn, int start_y)
     {
         int real_y = start_y + tpn.y_pos * 2;
         var y = real_y + 1;
@@ -358,24 +348,8 @@ public class RedstoneWireBuilder
             var nor = new BlockPos(Integer.signum(pr.getX()), 0, Integer.signum(pr.getZ()));
             Direction dir = Direction.fromVector(nor, Direction.UP).getOpposite(); // Intentionally invalid fall back
 
-            // It appears that sometimes that Lee algorithm that route if obstacles are found will put Steiner point in the path of other branches in the same tree causing problems
-            boolean on_x = absz != 0;
-            List<BlockPos> rep = null;
-
-            if (on_x) {
-                rep = GetIntersectorsX(rep_map, p1, p2);
-            } else {
-                rep = GetIntersectorsZ(rep_map, p1, p2);
-            }
-
-            for (BlockPos blockPos : rep)
-            {
-                if(blockPos.getY() == y)
-                {
-                    w.setBlockState(blockPos.withY(real_y + 1), Blocks.REPEATER.getDefaultState().with(HorizontalFacingBlock.FACING, dir), 2 | 816);
-                }
-            }
-
+            // It appears that sometimes that Lee algorithm that routes if obstacles are found will put a Steiner point in the path of other branches in the same tree causing problems
+            
             if(absx == 1 || absz == 1)
             {
                 // immediately nex to us, skip it

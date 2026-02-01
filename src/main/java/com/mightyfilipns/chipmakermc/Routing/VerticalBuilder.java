@@ -1,20 +1,16 @@
 package com.mightyfilipns.chipmakermc.Routing;
 
-import com.mightyfilipns.chipmakermc.Placer;
+import com.mightyfilipns.chipmakermc.Placment.Placer;
 import net.minecraft.block.*;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
-import org.apache.commons.lang3.tuple.Pair;
-
-import java.util.HashSet;
-import java.util.List;
 
 public class VerticalBuilder
 {
     public static final int NO_UPDATE = 2 | 816;
 
-    public static void BuildUpwards(ServerWorld w, BlockPos down, BlockPos upper, List<HashSet<Pair<Integer, Integer>>> occupied_map, BlockPos start, List<BlockPos> rep_map)
+    public static void BuildUpwards(ServerWorld w, BlockPos down, BlockPos upper)
     {
         var starty = down.getY() + Placer.Y_CELL_SIZE;
         var ylevel = (upper.getY() - starty) / 2;

@@ -1,7 +1,7 @@
 package com.mightyfilipns.chipmakermc.Misc;
 
 import com.mightyfilipns.chipmakermc.JsonLoader.JsonDesign;
-import com.mightyfilipns.chipmakermc.Placer;
+import com.mightyfilipns.chipmakermc.Placment.Placer;
 import com.mightyfilipns.chipmakermc.Routing.HyperGraphNet;
 import com.mightyfilipns.chipmakermc.Routing.Router;
 import com.mightyfilipns.chipmakermc.Routing.TwoPinNet;

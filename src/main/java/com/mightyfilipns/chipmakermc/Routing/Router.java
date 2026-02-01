@@ -3,7 +3,7 @@ package com.mightyfilipns.chipmakermc.Routing;
 import com.mightyfilipns.chipmakermc.JsonLoader.CellInfo;
 import com.mightyfilipns.chipmakermc.JsonLoader.JsonDesign;
 import com.mightyfilipns.chipmakermc.JsonLoader.AbstractCell;
-import com.mightyfilipns.chipmakermc.Placer;
+import com.mightyfilipns.chipmakermc.Placment.Placer;
 import com.mojang.brigadier.context.CommandContext;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
@@ -23,18 +23,11 @@ public class Router
 
     public static List<HyperGraphNet> cached_hy = null;
     public static List<TwoPinNet> cached_tpn = null;
-    static List<HashSet<Pair<Integer, Integer>>> ocm = null;
-    static List<HashSet<Pair<Integer, Integer>>> ocm_wire = null;
-    static List<BlockPos> g_rep_map = null;
-    public static List<BlockPos> g_pistonlist = new ArrayList<>();
-    public static List<BlockPos> g_update_pos = new ArrayList<>();
 
     public static int max_y = 80;
 
     public static void DoRouting(CommandContext<ServerCommandSource> context, JsonDesign.DesignModule mod, Map<CellInfo, BlockPos> cellmap, Map<Integer, BlockPos> port_rel_pos)
     {
-        g_pistonlist.clear();
-        g_update_pos.clear();
         Map<Integer, List<AbstractCell>> dd = new HashMap<>();
 
         LeeRouter.w = context.getSource().getWorld();
@@ -92,12 +85,6 @@ public class Router
         int starty = pos.getY() + Placer.Y_CELL_SIZE;
 
         int i = 0;
-        List<HashSet<Pair<Integer, Integer>>> occupied_map = new ArrayList<>();
-        List<HashSet<Pair<Integer, Integer>>> occupied_map_wire = new ArrayList<>();
-        List<BlockPos> rep_map = new ArrayList<>();
-        g_rep_map = rep_map;
-        ocm = occupied_map;
-        ocm_wire = occupied_map_wire;
         cached_hy = hy;
         cached_tpn = tpn;
         for (HyperGraphNet hp : hy)
@@ -123,7 +110,7 @@ public class Router
                 BlockPos hn = hyperGraphNet.pin_port_pos.get(j);
                 if (j == hyperGraphNet.out_port_pos)
                 {
-                    VerticalBuilder.BuildUpwards(w, hn, hn.withY(starty + hyperGraphNet.y_pos * 2), occupied_map_wire, pos, rep_map);
+                    VerticalBuilder.BuildUpwards(w, hn, hn.withY(starty + hyperGraphNet.y_pos * 2));
                 }
                 else
                 {
@@ -136,12 +123,12 @@ public class Router
         {
             if (tp.p1dir == JsonDesign.PortDirection.Input)
             {
-                VerticalBuilder.BuildUpwards(w, tp.p2, tp.p2.withY(starty + tp.y_pos * 2), occupied_map_wire, pos, rep_map);
+                VerticalBuilder.BuildUpwards(w, tp.p2, tp.p2.withY(starty + tp.y_pos * 2));
                 VerticalBuilder.BuildDownwards(w, tp.p1, tp.p1.withY(starty + tp.y_pos * 2));
             }
             else
             {
-                VerticalBuilder.BuildUpwards(w, tp.p1, tp.p1.withY(starty + tp.y_pos * 2), occupied_map_wire, pos, rep_map);
+                VerticalBuilder.BuildUpwards(w, tp.p1, tp.p1.withY(starty + tp.y_pos * 2));
                 VerticalBuilder.BuildDownwards(w, tp.p2, tp.p2.withY(starty + tp.y_pos * 2));
             }
         }
@@ -150,17 +137,17 @@ public class Router
         {
             RedstoneWireBuilder.FixPointTooClose(0, hyperGraphNet);
             RedstoneWireBuilder.FixHypergraphAdjList(0, hyperGraphNet);
-            RedstoneWireBuilder.BuildHypergraph(w, hyperGraphNet, rep_map, starty);
+            RedstoneWireBuilder.BuildHypergraph(w, hyperGraphNet, starty);
         }
         i = 0;
         System.out.println("Building two pin net wires");
         for (TwoPinNet twoPinNet : tpn)
         {
-            RedstoneWireBuilder.BuildTwoPin(w, twoPinNet, rep_map, starty);
+            RedstoneWireBuilder.BuildTwoPin(w, twoPinNet, starty);
             i++;
         }
 
-        max_y = 50;//starty + occupied_map_wire.size() * 2 + 1;
+        max_y = starty + obm.GetMaxY() * 2 + 1;
     }
 
     public static void RebuildCache(CommandContext<ServerCommandSource> context)

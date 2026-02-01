@@ -7,7 +7,7 @@ import com.mightyfilipns.chipmakermc.JsonLoader.JsonDesign;
 import com.mightyfilipns.chipmakermc.JsonLoader.JsonLoadCommand;
 import com.mightyfilipns.chipmakermc.Misc.CellTypeSuggestionProvider;
 import com.mightyfilipns.chipmakermc.Misc.VCDHandler;
-import com.mightyfilipns.chipmakermc.Placment.NewPlacer;
+import com.mightyfilipns.chipmakermc.Placment.Placer;
 import com.mightyfilipns.chipmakermc.Routing.Misc;
 import com.mightyfilipns.chipmakermc.Routing.Router;
 import com.mightyfilipns.chipmakermc.Routing.TestCmds;
@@ -44,9 +44,9 @@ public class Chipmakermc implements ModInitializer
             dispatcher.register(CommandManager.literal("chipmaker")
                     .then(CommandManager.literal("load_json").executes(JsonLoadCommand::LoadJSONDesign))
                     .then(CommandManager.literal("place")
-                            .then(CommandManager.argument("start_pos", BlockPosArgumentType.blockPos()).executes(NewPlacer::PlaceDesign)))
+                            .then(CommandManager.argument("start_pos", BlockPosArgumentType.blockPos()).executes(Placer::PlaceDesign)))
                     .then(CommandManager.literal("place_cache")
-                            .then(CommandManager.argument("start_pos", BlockPosArgumentType.blockPos()).executes(NewPlacer::PlaceCache)))
+                            .then(CommandManager.argument("start_pos", BlockPosArgumentType.blockPos()).executes(Placer::PlaceCache)))
                     .then(CommandManager.literal("param")
                             .then(CommandManager.literal("max_iter")
                                             .then(CommandManager.argument("max_iter", IntegerArgumentType.integer(0, 10_000)).executes(Chipmakermc::SetMaxIter))
@@ -59,10 +59,6 @@ public class Chipmakermc implements ModInitializer
                             .then(CommandManager.literal("chip_size")
                                     .then(CommandManager.argument("chip_size", IntegerArgumentType.integer(0, 10_000)).executes(Chipmakermc::SetChipSize))
                             .executes(Chipmakermc::GetChipSize)
-                            )
-                            .then(CommandManager.literal("final_overlap_fix")
-                                    .then(CommandManager.argument("final_overlap_fix", BoolArgumentType.bool()).executes(Chipmakermc::SetFinalOverlap))
-                            .executes(Chipmakermc::GetFinalOverlap)
                             )
                             .then(CommandManager.literal("do_actual_place")
                                     .then(CommandManager.argument("do_actual_place", BoolArgumentType.bool()).executes(Chipmakermc::SetActualPlace))
@@ -90,8 +86,7 @@ public class Chipmakermc implements ModInitializer
                     )
                     .then(CommandManager.literal("debug")
                             .then(CommandManager.literal("vcddebug").executes(Chipmakermc::VCDDebug))
-                            .then(CommandManager.literal("vcdcomp").executes(Chipmakermc::VCDComp))
-                            .then(CommandManager.literal("check_piston").executes(TestCmds::CheckPistons)))
+                            .then(CommandManager.literal("vcdcomp").executes(Chipmakermc::VCDComp)))
             );
         });
 
@@ -242,19 +237,6 @@ public class Chipmakermc implements ModInitializer
     {
         Placer.chip_size = IntegerArgumentType.getInteger(context, "chip_size");
         context.getSource().sendFeedback(() -> Text.literal("Chip size is now: " + Placer.chip_size), false);
-        return 1;
-    }
-
-    static int GetFinalOverlap(CommandContext<ServerCommandSource> context)
-    {
-        context.getSource().sendFeedback(() -> Text.literal("Do overlap fix - " + Placer.do_overlap_fix_final), false);
-        return 1;
-    }
-
-    static int SetFinalOverlap(CommandContext<ServerCommandSource> context)
-    {
-        Placer.do_overlap_fix_final = BoolArgumentType.getBool(context, "final_overlap_fix");
-        context.getSource().sendFeedback(() -> Text.literal("Do overlap fix is now: " + Placer.do_overlap_fix_final), false);
         return 1;
     }
 

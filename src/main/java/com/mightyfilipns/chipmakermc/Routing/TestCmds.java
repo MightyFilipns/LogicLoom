@@ -2,11 +2,10 @@ package com.mightyfilipns.chipmakermc.Routing;
 
 import com.mightyfilipns.chipmakermc.Chipmakermc;
 import com.mightyfilipns.chipmakermc.JsonLoader.JsonDesign;
-import com.mightyfilipns.chipmakermc.Placer;
+import com.mightyfilipns.chipmakermc.Placment.Placer;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import net.minecraft.block.Blocks;
-import net.minecraft.block.RedstoneWireBlock;
 import net.minecraft.command.argument.BlockPosArgumentType;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.util.math.BlockPos;
@@ -94,9 +93,9 @@ public class TestCmds
         int index = IntegerArgumentType.getInteger(context, "index");
         // HyperGraphNet h = Router.cached_hy.get(index);
         //RedstoneWireBuilder.FixHypergraphAdjList(0, h);
-        //RedstoneWireBuilder.BuildHypergraph(context.getSource().getWorld(), h, Router.g_rep_map, Placer.last_pos.getY() + Placer.Y_CELL_SIZE);
+        //RedstoneWireBuilder.BuildHypergraph(context.getSource().getWorld(), h, Router.g_rep_map, NewPlacer.last_pos.getY() + NewPlacer.Y_CELL_SIZE);
         TwoPinNet tpn = Router.cached_tpn.get(index);
-        RedstoneWireBuilder.BuildTwoPin(context.getSource().getWorld(), tpn, Router.g_rep_map, Placer.last_pos.getY() + Placer.Y_CELL_SIZE);
+        RedstoneWireBuilder.BuildTwoPin(context.getSource().getWorld(), tpn, Placer.last_pos.getY() + Placer.Y_CELL_SIZE);
         return 1;
     }
 
@@ -146,53 +145,6 @@ public class TestCmds
         BlockPos p = BlockPosArgumentType.getBlockPos(context, "up");
         List<BlockPos> m = new ArrayList<>();
         VerticalBuilder.BuildDownwards(context.getSource().getWorld(), d, p);
-        return 1;
-    }
-
-    public static int CheckPistons(CommandContext<ServerCommandSource> context)
-    {
-        var w = context.getSource().getWorld();
-        boolean found = false;
-
-
-        for (BlockPos blockPos : Router.g_pistonlist)
-        {
-            boolean blockpower  = w.getBlockState(blockPos).getBlock() == Blocks.REDSTONE_BLOCK;
-            boolean wirepower = w.getBlockState(blockPos.withY(Placer.last_pos.getY())).get(RedstoneWireBlock.POWER) != 0;
-            if (blockpower != wirepower)
-            {
-                found = true;
-                System.out.println("Wire mismatch at: " + blockPos);
-                blockPos = blockPos.add(0, -1,0);
-                var pos = wirepower ? blockPos : blockPos.add(0, 1, 0);
-                if(false)
-                {
-                    if (!wirepower)
-                        w.setBlockState(blockPos, Blocks.AIR.getDefaultState(), 2 | 816);
-                    else
-                        w.setBlockState(blockPos.add(0, 2, 0), Blocks.AIR.getDefaultState(), 2 | 816);
-
-                    w.setBlockState(pos, Blocks.SLIME_BLOCK.getDefaultState());
-                    w.setBlockState(pos.add(0,1,0), Blocks.REDSTONE_BLOCK.getDefaultState());
-                }
-            }
-            /*
-            Direction dir = w.getBlockState(blockPos).get(FacingBlock.FACING);
-            boolean ext = w.getBlockState(blockPos).get(PistonBlock.EXTENDED);
-            if (!ext)
-            {
-                var check_pos = blockPos.add(dir.getVector());
-                if (w.getBlockState(check_pos).isAir())
-                {
-                    found = true;
-                    System.out.println("Bad piston at: " + check_pos);
-                }
-            }*/
-        }
-        if (!found)
-        {
-            System.out.println("No desyncs found");
-        }
         return 1;
     }
 }

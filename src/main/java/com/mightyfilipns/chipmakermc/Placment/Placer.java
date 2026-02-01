@@ -22,18 +22,27 @@ import org.jspecify.annotations.NonNull;
 
 import java.util.*;
 
-import static com.mightyfilipns.chipmakermc.Placer.*;
 import static com.mightyfilipns.chipmakermc.Placment.PlacerMisc.*;
 import static com.mightyfilipns.chipmakermc.Placment.TetrisLegalizer.Legalize;
 import static java.lang.Math.*;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 
-public class NewPlacer
+public class Placer
 {
     public final static int Z_CELL_SIZE = 8;
     public final static int X_CELL_SIZE = 6;
     public final static int Y_CELL_SIZE = 4;
+    public static double force_mul = 0.05D;
+    public static int max_iter = 137;
+    public static int chip_size = 400;
+    public static BlockPos last_pos = new BlockPos(74, -12, -189);
+    public static boolean do_vertical = false;
+    public static boolean do_actual_place = true;
+    public static HashMap<Integer, BlockPos> rel_port_pos = null;
+    public static Map<CellInfo, BlockPos> g_mp = null;
+    public static int[] g_xsa = null;
+    public static int[] g_zsa = null;
 
     public static int PlaceCache(CommandContext<ServerCommandSource> context)
     {
@@ -274,8 +283,8 @@ public class NewPlacer
             if (zc > chip_size)
                 redirz = zc - chip_size;
 
-            double fx = redirx != 0 ? redirx : 0;
-            double fz = redirz != 0 ? redirz : 0;
+            double fx = redirx;
+            double fz = redirz;
             if(fx != 0 || fz != 0)
             {
                 found = true;

@@ -6,8 +6,8 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
-import static com.mightyfilipns.chipmakermc.Placment.NewPlacer.X_CELL_SIZE;
-import static com.mightyfilipns.chipmakermc.Placment.NewPlacer.Z_CELL_SIZE;
+import static com.mightyfilipns.chipmakermc.Placment.Placer.X_CELL_SIZE;
+import static com.mightyfilipns.chipmakermc.Placment.Placer.Z_CELL_SIZE;
 
 /// This is a Tetris like legalizer. It just iteratively checks in all four directions until it finds a valid position
 public class TetrisLegalizer

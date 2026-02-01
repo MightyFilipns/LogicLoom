@@ -15,7 +15,7 @@ public class ObstacleMap
     private HashSet<Pair<Integer, Integer>> exlcd = null;
     private HashSet<Pair<Integer, Integer>> full_exlcd = null;
 
-    private HashSet<Pair<Integer, Integer>> temproute = new HashSet<>();
+    private final HashSet<Pair<Integer, Integer>> temproute = new HashSet<>();
 
     public ObstacleMap(List<HyperGraphNet> hy, List<TwoPinNet> tpn)
     {
@@ -38,6 +38,11 @@ public class ObstacleMap
                 addAll(Misc.MakeObstMapFromPort(pinPortPo, dir));
             }
         }
+    }
+
+    public int GetMaxY()
+    {
+        return map.size();
     }
 
     public void TempExclude(List<HashSet<Pair<Integer, Integer>>> tr)
