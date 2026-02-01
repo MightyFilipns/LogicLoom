@@ -1,4 +1,4 @@
-package com.mightyfilipns.chipmakermc;
+package com.mightyfilipns.chipmakermc.JsonLoader;
 
 import com.google.gson.annotations.SerializedName;
 import net.minecraft.util.StringIdentifiable;

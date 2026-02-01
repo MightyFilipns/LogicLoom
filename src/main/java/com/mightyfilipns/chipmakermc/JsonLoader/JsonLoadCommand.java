@@ -1,13 +1,12 @@
-package com.mightyfilipns.chipmakermc;
+package com.mightyfilipns.chipmakermc.JsonLoader;
 
-import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.mightyfilipns.chipmakermc.Chipmakermc;
 import com.mojang.brigadier.context.CommandContext;
 import net.minecraft.text.Text;
 import net.minecraft.server.command.*;
-import java.io.FileNotFoundException;
+
 import java.io.FileReader;
-import java.io.IOException;
 
 
 public class JsonLoadCommand

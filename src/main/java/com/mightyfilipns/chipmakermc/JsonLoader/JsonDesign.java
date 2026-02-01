@@ -1,8 +1,7 @@
-package com.mightyfilipns.chipmakermc;
+package com.mightyfilipns.chipmakermc.JsonLoader;
 
 import com.google.gson.*;
 import com.google.gson.annotations.SerializedName;
-import com.mightyfilipns.chipmakermc.JsonLoader.AbstractCell;
 
 import java.lang.reflect.Type;
 import java.util.List;

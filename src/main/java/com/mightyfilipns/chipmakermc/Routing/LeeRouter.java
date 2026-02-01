@@ -14,7 +14,7 @@ public class LeeRouter
 {
     public static ServerWorld w = null;
 
-    public static List<Pair<Integer, Integer>> DoLeeRouter(HashSet<Pair<Integer, Integer>> port_map, BlockPos start, BlockPos end)
+    public static List<Pair<Integer, Integer>> DoLeeRouter(ObstacleMap port_map, BlockPos start, BlockPos end, int y)
     {
         HashMap<Pair<Integer, Integer>, Integer> value_grid = new HashMap<>();
         List<Pair<Integer, Integer>> last_marked_points = new ArrayList<>();
@@ -23,9 +23,9 @@ public class LeeRouter
         value_grid.put(sp, 0);
         int lastv = 0;
         last_marked_points.add(sp);
-        if(port_map.contains(endp))
+        if(!port_map.IsFree(endp, y))
             throw new RuntimeException("LeeRouter: End point is in the list of obstacles. Unroutable");
-        if(port_map.contains(sp))
+        if(!port_map.IsFree(sp, y))
             throw new RuntimeException("LeeRouter: Start point is in the list of obstacles. Unroutable");
 
         // Bounding box
@@ -37,16 +37,13 @@ public class LeeRouter
         {
             lastv++;
             List<Pair<Integer, Integer>> new_mark = new ArrayList<>();
-            boolean expanded = false;
             for (Pair<Integer, Integer> lastMarkedPoint : last_marked_points)
             {
-                // var pts = GetSurroundingPoints(lastMarkedPoint);
                 var pts = GetSurroundingPointsLimited(lastMarkedPoint, max, min, tol);
                 for (Pair<Integer, Integer> pt : pts)
                 {
-                    if(!value_grid.containsKey(pt) && !port_map.contains(pt))
+                    if(!value_grid.containsKey(pt) && port_map.IsFree(pt, y))
                     {
-                        expanded = true;
                         value_grid.put(pt, lastv);
                         new_mark.add(pt);
                     }
@@ -59,13 +56,9 @@ public class LeeRouter
             }
             else
             {
-                for (Pair<Integer, Integer> integerIntegerPair : port_map)
-                {
-                    w.setBlockState(Misc.AsBlockPos(integerIntegerPair, 0), Blocks.RED_WOOL.getDefaultState());
-                }
                 w.setBlockState(start.withY(0), Blocks.BLUE_WOOL.getDefaultState());
                 w.setBlockState(end.withY(0), Blocks.BLUE_WOOL.getDefaultState());
-                throw new RuntimeException("empty new mark");
+                throw new RuntimeException("DoLeeRouter: empty new mark. Increase the tolerance");
             }
 
             if(lastv > 2000)

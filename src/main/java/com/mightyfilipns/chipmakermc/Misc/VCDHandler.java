@@ -1,20 +1,16 @@
-package com.mightyfilipns.chipmakermc;
+package com.mightyfilipns.chipmakermc.Misc;
 
-import com.google.common.collect.BiMap;
-import com.google.common.collect.HashBiMap;
+import com.mightyfilipns.chipmakermc.JsonLoader.JsonDesign;
+import com.mightyfilipns.chipmakermc.Placer;
 import com.mightyfilipns.chipmakermc.Routing.HyperGraphNet;
 import com.mightyfilipns.chipmakermc.Routing.Router;
 import com.mightyfilipns.chipmakermc.Routing.TwoPinNet;
 import net.minecraft.block.Blocks;
-import net.minecraft.block.PistonBlock;
 import net.minecraft.block.RedstoneWireBlock;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
@@ -31,19 +27,53 @@ public class VCDHandler
 
     public static void GetCurrentValuesAndCompare(ServerWorld w)
     {
+        boolean found = false;
+        for (HyperGraphNet hp : Router.cached_hy)
+        {
+            var outpos = hp.all_points.get(hp.allpoints_pos).withY(Placer.last_pos.getY());
+            var outpwr = CheckPower(w, outpos);
+            for (BlockPos allPoint : hp.pin_port_pos)
+            {
+                BlockPos inpos = allPoint.withY(Placer.last_pos.getY());
+                var pointpwr = CheckPower(w, inpos);
+                if (pointpwr != outpwr)
+                {
+                    found = true;
+                    System.out.printf("Bad wire Power out: %s, %s Power in: %s, %s%n", outpos, outpwr, inpos, pointpwr);
+                }
+            }
+        }
+        for (TwoPinNet hp : Router.cached_tpn)
+        {
+            var outpos = hp.p1dir == JsonDesign.PortDirection.Output ? hp.p1 : hp.p2;
+            var inpos = hp.p1dir == JsonDesign.PortDirection.Output ? hp.p2 : hp.p1;
+            var pwr1 = CheckPower(w, outpos.withY(Placer.last_pos.getY()));
+            var pwr2 = CheckPower(w, inpos.withY(Placer.last_pos.getY()));
+
+            if (pwr1 != pwr2)
+            {
+                found = true;
+                System.out.printf("Bad wire Power out: %s, %s Power in: %s, %s%n", outpos, pwr1, inpos, pwr2);
+            }
+        }
+        if (!found)
+        {
+            System.out.println("No bad wires found");
+        }
+/*
         Map<String, Boolean> valuemap = new HashMap<>();
         netid_toout_pos = new HashMap<>();
         for (HyperGraphNet hyperGraphNet : Router.cached_hy)
         {
             var outpos = hyperGraphNet.all_points.get(hyperGraphNet.allpoints_pos).withY(Placer.last_pos.getY());
-            var isext = w.getBlockState(outpos).get(RedstoneWireBlock.POWER) != 0;
+            var isext = w.isReceivingRedstonePower(outpos);
             valuemap.put(id_netname.get(hyperGraphNet.net_id), isext);
             netid_toout_pos.put(hyperGraphNet.net_id, outpos);
         }
         for (TwoPinNet tpn : Router.cached_tpn)
         {
             var outpos = tpn.p1dir == JsonDesign.PortDirection.Output ? tpn.p1.withY(Placer.last_pos.getY()) : tpn.p2.withY(Placer.last_pos.getY());
-            var isext = w.getBlockState(outpos).get(RedstoneWireBlock.POWER) != 0;
+            var isext = w.isReceivingRedstonePower(outpos);
             valuemap.put(id_netname.get(tpn.id), isext);
             netid_toout_pos.put(tpn.id, outpos);
         }
@@ -59,7 +89,16 @@ public class VCDHandler
         if (!found)
         {
             System.out.println("No mismatches found");
+        }*/
+    }
+
+    private static boolean CheckPower(ServerWorld w, BlockPos outpos)
+    {
+        if (w.getBlockState(outpos).getBlock() == Blocks.REDSTONE_WIRE)
+        {
+            return w.getBlockState(outpos).get(RedstoneWireBlock.POWER) != 0;
         }
+        return w.isReceivingRedstonePower(outpos);
     }
 
     public static void SetMap(JsonDesign.DesignModule m)

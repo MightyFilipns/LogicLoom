@@ -1,6 +1,6 @@
 package com.mightyfilipns.chipmakermc.Routing;
 
-import com.mightyfilipns.chipmakermc.JsonDesign;
+import com.mightyfilipns.chipmakermc.JsonLoader.JsonDesign;
 import com.mightyfilipns.chipmakermc.JsonLoader.AbstractCell;
 import net.minecraft.util.math.BlockPos;
 

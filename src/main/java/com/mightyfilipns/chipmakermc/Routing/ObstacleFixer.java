@@ -1,9 +1,6 @@
 package com.mightyfilipns.chipmakermc.Routing;
 
-import com.google.common.collect.Table;
-import com.mightyfilipns.chipmakermc.CellInfo;
-import com.mightyfilipns.chipmakermc.CellType;
-import com.mightyfilipns.chipmakermc.JsonDesign;
+import com.mightyfilipns.chipmakermc.JsonLoader.JsonDesign;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import org.apache.commons.lang3.tuple.Pair;
@@ -13,12 +10,13 @@ import java.util.*;
 public class ObstacleFixer
 {
 
-    static void FixObstaclesHyperGraph(HyperGraphNet hp, HashSet<Pair<Integer, Integer>> port_map, ServerWorld w, HashSet<Pair<Integer, Integer>> gobstm)
+    static void FixObstaclesHyperGraph(HyperGraphNet hp, ObstacleMap port_map, ServerWorld w, int y)
     {
-        HashSet<Pair<Integer, Integer>> obst_points = new HashSet<>();
-        hp.pin_port_pos.stream().map(a -> Misc.MakeObstMapFromPortRemove(a,
-                a == hp.pin_port_pos.get(hp.out_port_pos) ? JsonDesign.PortDirection.Output : JsonDesign.PortDirection.Input, gobstm)).forEach(obst_points::addAll);
-        port_map.removeAll(obst_points);
+        port_map.TempExclude(hp.pin_port_pos.stream().map(a -> Misc.MakeObstMapFromPortRemove(a,
+                a == hp.pin_port_pos.get(hp.out_port_pos) ? JsonDesign.PortDirection.Output : JsonDesign.PortDirection.Input)).toList());
+
+        port_map.SetFullExclude(hp.pin_port_pos.stream().map(a -> Misc.MakeObstMapFromPort(a,
+                a == hp.pin_port_pos.get(hp.out_port_pos) ? JsonDesign.PortDirection.Output : JsonDesign.PortDirection.Input)).toList());
 
         List<List<Integer>> adj_list = new ArrayList<>();
         List<BlockPos> all_points = new ArrayList<>();
@@ -26,14 +24,14 @@ public class ObstacleFixer
         for (int i = 0; i < hp.tree.branch.length; i++)
         {
             var brn = hp.tree.branch[i];
-            if(port_map.contains(Pair.of(brn.x, brn.y)))
+            if(!port_map.IsFree(Pair.of(brn.x, brn.y), y))
             {
-                // Steiner point is over a port
+                // Steiner point is over an obstacle
                 do {
                     // Move the Steiner point
                     brn.x--;
                     // TODO: better algorithm for finding a valid point
-                } while(port_map.contains(Pair.of(brn.x, brn.y)));
+                } while(!port_map.IsFree(Pair.of(brn.x, brn.y), y));
             }
         }
 
@@ -49,7 +47,7 @@ public class ObstacleFixer
             var mid1 = new BlockPos(startp.getX(), 0, endp.getZ());
             var mid2 = new BlockPos(endp.getX(), 0, startp.getZ());
 
-            if(!Misc.AxisDiffer(startp, endp) && !IntersectsObstacles(startp, endp, port_map))
+            if(!Misc.AxisDiffer(startp, endp) && !IntersectsObstacles(startp, endp, port_map, y))
             {
                 int si;
                 int ei;
@@ -62,16 +60,16 @@ public class ObstacleFixer
 
             BlockPos fmid;
 
-            boolean c1 = IntersectsObstacles(startp, mid1, port_map);
-            boolean c2 = IntersectsObstacles(mid1, endp, port_map);
+            boolean c1 = IntersectsObstacles(startp, mid1, port_map, y);
+            boolean c2 = IntersectsObstacles(mid1, endp, port_map, y);
 
             if(c1 || c2)
             {
-                c1 = IntersectsObstacles(startp, mid2, port_map);
-                c2 = IntersectsObstacles(mid2, endp, port_map);
+                c1 = IntersectsObstacles(startp, mid2, port_map, y);
+                c2 = IntersectsObstacles(mid2, endp, port_map, y);
                 if(c1 || c2)
                 {
-                    var rez = LeeRouter.DoLeeRouter(port_map, startp, endp);
+                    var rez = LeeRouter.DoLeeRouter(port_map, startp, endp, y);
                     List<Integer> indicies = new ArrayList<>();
                     for (Pair<Integer, Integer> integerIntegerPair : rez)
                     {
@@ -105,7 +103,6 @@ public class ObstacleFixer
         hp.allpoints_pos = all_points.indexOf(hp.pin_port_pos.get(hp.out_port_pos).withY(0));
 
         hp.SetAdjList(adj_list, all_points);
-        port_map.addAll(obst_points);
     }
 
     public static void ConnBranches(List<List<Integer>> adj_list, int si, int mi)
@@ -115,7 +112,6 @@ public class ObstacleFixer
 
         if (!adj_list.get(si).stream().filter(a -> a == mi).toList().isEmpty())
             return;
-            //throw new RuntimeException("Can not add double branch");
 
         adj_list.get(si).add(mi);
         adj_list.get(mi).add(si);
@@ -138,27 +134,81 @@ public class ObstacleFixer
         return si;
     }
 
-    static boolean IntersectsObstacles(BlockPos p1, BlockPos p2, HashSet<Pair<Integer, Integer>> port_map)
+    static boolean IntersectsObstacles(BlockPos p1, BlockPos p2, ObstacleMap port_map, int y)
     {
         for (BlockPos blockPos : BlockPos.iterate(p1, p2))
         {
-            if (port_map.contains(Pair.of(blockPos.getX(), blockPos.getZ())))
+            if (!port_map.IsFree(Pair.of(blockPos.getX(), blockPos.getZ()), y))
                 return true;
         }
         return false;
     }
 
-    public static HashSet<Pair<Integer, Integer>> GetGlobalObstMap(Map<CellInfo, BlockPos> cellmap)
+    static void FixObstacleTwoPinNet(TwoPinNet tpn, ObstacleMap obm, int y)
     {
-        var obst = new HashSet<Pair<Integer, Integer>>();
-        for (Map.Entry<CellInfo, BlockPos> en : cellmap.entrySet())
+        var pr1 = Misc.MakeObstMapFromPortRemove(tpn.p1, tpn.p1dir);
+        var pr2 = Misc.MakeObstMapFromPortRemove(tpn.p2, tpn.p1dir.Invert());
+        var pr3 = new HashSet<>(pr1);
+        pr3.addAll(pr2);
+        obm.TempExclude(Collections.singletonList(pr3));
+
+        pr1 = Misc.MakeObstMapFromPort(tpn.p1, tpn.p1dir);
+        pr2 = Misc.MakeObstMapFromPort(tpn.p2, tpn.p1dir.Invert());
+        obm.SetFullExclude(List.of(new HashSet[]{pr1, pr2}));
+
+        var p1 = tpn.p1;
+        var p2 = tpn.p2;
+        var mid1 = new BlockPos(p1.getX(), 0, p2.getZ());
+        var mid2 = new BlockPos(p2.getX(), 0, p1.getZ());
+
+        boolean mid1_possible = !IntersectsObstacles(p1, mid1, obm, y) && !IntersectsObstacles(mid1, p2, obm, y);
+        boolean mid2_possible = !IntersectsObstacles(p1, mid2, obm, y) && !IntersectsObstacles(mid2, p2, obm, y);
+
+        if(!Misc.AxisDiffer(p1, p2) && !IntersectsObstacles(p1, p2, obm, y))
         {
-            // Has only a single input
-            if (en.getKey().type == CellType.NOT)
-                continue;
-            var blockpos = en.getValue().add(1,0,5);
-            obst.add(Misc.AsPair(blockpos));
+            List<List<Integer>> adjl = new ArrayList<>();
+            adjl.add(new ArrayList<>());
+            adjl.add(new ArrayList<>());
+
+            List<BlockPos> blks = new ArrayList<>();
+            blks.add(p1);
+            blks.add(p2);
+
+            ConnBranches(adjl, 0 ,1);
+
+            tpn.adj_list = adjl;
+            tpn.point_list = tpn.p1dir == JsonDesign.PortDirection.Output ? blks : blks.reversed();
         }
-        return obst;
+        else if(mid2_possible || mid1_possible)
+        {
+            var fmid = mid1_possible ? mid1 : mid2;
+
+            List<List<Integer>> adjl = new ArrayList<>();
+            adjl.add(new ArrayList<>());
+            adjl.add(new ArrayList<>());
+            adjl.add(new ArrayList<>());
+            ConnBranches(adjl, 0 ,1);
+            ConnBranches(adjl, 1 ,2);
+            List<BlockPos> blks = new ArrayList<>();
+            blks.add(p1);
+            blks.add(fmid);
+            blks.add(p2);
+            tpn.adj_list = adjl;
+            tpn.point_list = tpn.p1dir == JsonDesign.PortDirection.Output ? blks : blks.reversed();
+        }
+        else
+        {
+            var leerez = LeeRouter.DoLeeRouter(obm, p1, p2, y);
+            var blks = leerez.stream().map(a -> new BlockPos(a.getLeft(), 0, a.getRight())).toList();
+            List<List<Integer>> adjl = new ArrayList<>();
+            adjl.add(new ArrayList<>());
+            for (int i = 1; i < leerez.size(); i++)
+            {
+                adjl.add(new ArrayList<>());
+                ConnBranches(adjl, i - 1, i);
+            }
+            tpn.point_list = tpn.p1dir == JsonDesign.PortDirection.Output ? blks.reversed() : blks;
+            tpn.adj_list = adjl;
+        }
     }
 }

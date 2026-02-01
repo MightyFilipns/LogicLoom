@@ -3,6 +3,9 @@ package com.mightyfilipns.chipmakermc.Placment;
 import Jama.Matrix;
 import com.mightyfilipns.chipmakermc.*;
 import com.mightyfilipns.chipmakermc.JsonLoader.AbstractCell;
+import com.mightyfilipns.chipmakermc.JsonLoader.CellInfo;
+import com.mightyfilipns.chipmakermc.JsonLoader.JsonDesign;
+import com.mightyfilipns.chipmakermc.Misc.VCDHandler;
 import com.mojang.brigadier.context.CommandContext;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
@@ -15,7 +18,6 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.commons.lang3.tuple.Triple;
 import org.jspecify.annotations.NonNull;
 
 import java.util.*;
@@ -234,25 +236,12 @@ public class NewPlacer
                     continue;
                 double x2 = xsol.get(j,0);
                 double z2 = zsol.get(j,0);
-                // var pr = Pair.of((int)x2 / X_CELL_SIZE, (int)z2 / Z_CELL_SIZE);
-                /*
-                int dt = 0;
-                for (int xc = 0; xc < X_CELL_SIZE; xc++) {
-                    for (int zc = 0; zc < Z_CELL_SIZE; zc++) {
-                        dt += density.computeIfAbsent(Pair.of((int)round(x2) + xc, (int)round(z2) + zc), a -> 0);
-                    }
-                }*/
-
-                var ld = 1; //density.getOrDefault(Pair.of(pr), 1);
-                //var ld = dt / CELL_AREA;
-                //force_sumx += 1 / ((x - x2) * (x - x2));
-                //force_sumz += 1 / ((z - z2) * (z - z2));
 
                 double euclidean_dist = ((x - x2) * (x - x2)) + ((z - z2) * (z - z2));
                 if(!Double.isNaN(euclidean_dist))
                 {
-                    force_sumx += (ld * (x - x2)) / euclidean_dist;
-                    force_sumz += (ld * (z - z2)) / euclidean_dist;
+                    force_sumx += (1 * (x - x2)) / euclidean_dist;
+                    force_sumz += (1 * (z - z2)) / euclidean_dist;
                 }
             }
             absmaxx = max(absmaxx, abs(force_sumx));

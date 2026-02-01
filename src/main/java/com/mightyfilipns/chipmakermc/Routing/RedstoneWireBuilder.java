@@ -24,7 +24,6 @@ public class RedstoneWireBuilder
         boolean[] visited = new boolean[h.adj_list.size()];
         visited[h.allpoints_pos] = true;
         DFS_build(h.allpoints_pos, w, h, rep_map, real_y, visited);
-        //var fully_built = Arrays.stream(visited).allMatch(a -> a);
         for (int i = 0; i < visited.length; i++)
         {
             if(!visited[i])
@@ -451,18 +450,12 @@ public class RedstoneWireBuilder
                     }
                 }
 
-
                 w.setBlockState(repp1, Blocks.REPEATER.getDefaultState().with(HorizontalFacingBlock.FACING, dir), 2 | 816);
                 w.setBlockState(repp2, Blocks.REPEATER.getDefaultState().with(HorizontalFacingBlock.FACING, dir), 2 | 816);
             }
             w.setBlockState(p1.withY(real_y + 1), Blocks.REDSTONE_WIRE.getDefaultState());
             w.setBlockState(p2.withY(real_y + 1), Blocks.REDSTONE_WIRE.getDefaultState());
         }
-        /*
-        for (int i = 1; i < tpn.point_list.size() - 1; i++)
-        {
-            w.setBlockState(tpn.point_list.get(i).withY(y), Blocks.REDSTONE_WIRE.getDefaultState(), 2 | 816);
-        }*/
         w.updateNeighbors(tpn.point_list.getFirst().withY(real_y + 1), Blocks.REDSTONE_WIRE);
     }
 

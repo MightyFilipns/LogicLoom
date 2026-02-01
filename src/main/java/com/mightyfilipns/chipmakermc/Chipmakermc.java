@@ -2,7 +2,13 @@ package com.mightyfilipns.chipmakermc;
 
 import com.google.gson.*;
 import com.google.gson.reflect.TypeToken;
+import com.mightyfilipns.chipmakermc.JsonLoader.CellType;
+import com.mightyfilipns.chipmakermc.JsonLoader.JsonDesign;
+import com.mightyfilipns.chipmakermc.JsonLoader.JsonLoadCommand;
+import com.mightyfilipns.chipmakermc.Misc.CellTypeSuggestionProvider;
+import com.mightyfilipns.chipmakermc.Misc.VCDHandler;
 import com.mightyfilipns.chipmakermc.Placment.NewPlacer;
+import com.mightyfilipns.chipmakermc.Routing.Misc;
 import com.mightyfilipns.chipmakermc.Routing.Router;
 import com.mightyfilipns.chipmakermc.Routing.TestCmds;
 import com.mojang.brigadier.arguments.*;
@@ -20,7 +26,6 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -98,7 +103,7 @@ public class Chipmakermc implements ModInitializer
 
 
                 try {
-                    Router.SetupFlute(dat1.get().getInputStream(), dat2.get().getInputStream());
+                    Misc.SetupFlute(dat1.get().getInputStream(), dat2.get().getInputStream());
                 } catch (Exception e) {
                     System.out.println("Failed to setup flute Error: " +  e.getMessage());
                 }

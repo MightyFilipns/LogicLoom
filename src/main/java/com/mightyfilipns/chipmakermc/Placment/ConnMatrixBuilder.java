@@ -1,7 +1,10 @@
-package com.mightyfilipns.chipmakermc;
+package com.mightyfilipns.chipmakermc.Placment;
 
 import Jama.Matrix;
+import com.mightyfilipns.chipmakermc.Chipmakermc;
 import com.mightyfilipns.chipmakermc.JsonLoader.AbstractCell;
+import com.mightyfilipns.chipmakermc.JsonLoader.CellInfo;
+import com.mightyfilipns.chipmakermc.JsonLoader.JsonDesign;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 

@@ -1,9 +1,11 @@
 package com.mightyfilipns.chipmakermc.Routing;
 
-import com.mightyfilipns.chipmakermc.JsonDesign;
+import com.mightyfilipns.chipmakermc.JsonLoader.JsonDesign;
 import net.minecraft.util.math.BlockPos;
 import org.apache.commons.lang3.tuple.Pair;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -42,7 +44,7 @@ public class Misc
         ret.addAll(pts2);
         return ret;
     }
-    public static HashSet<Pair<Integer, Integer>> MakeObstMapFromPortRemove(BlockPos p1, JsonDesign.PortDirection dir, HashSet<Pair<Integer, Integer>> gobstm)
+    public static HashSet<Pair<Integer, Integer>> MakeObstMapFromPortRemove(BlockPos p1, JsonDesign.PortDirection dir)
     {
         var pts1 = GetSurroundingPoints(AsPair(p1));
         HashSet<Pair<Integer, Integer>> ret = new HashSet<>(pts1);
@@ -64,19 +66,21 @@ public class Misc
         {
             ret.remove(Pair.of(p1.getX() + 1, p1.getZ()));
         }
-        if (gobstm.contains(Pair.of(p1.getX() - 1, p1.getZ())))
-        {
-            ret.remove(Pair.of(p1.getX() - 1, p1.getZ()));
-        }
-        if (gobstm.contains(Pair.of(p1.getX() + 2, p1.getZ())))
-        {
-            ret.remove(Pair.of(p1.getX() + 2, p1.getZ()));
-        }
         return ret;
     }
 
     static boolean AxisDiffer(BlockPos p1, BlockPos p2)
     {
         return p1.getX() != p2.getX() && p1.getZ() != p2.getZ();
+    }
+
+    public static void SetupFlute(InputStream in1, InputStream in2)
+    {
+        Router.flu = new Flute();
+        try {
+            Router.flu.readLUT(in1, in2);
+        } catch (IOException e) {
+            System.out.println("Failed to load FLUTE library lookup tables");
+        }
     }
 }

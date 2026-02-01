@@ -1,6 +1,4 @@
-package com.mightyfilipns.chipmakermc;
-
-import com.mightyfilipns.chipmakermc.JsonLoader.AbstractCell;
+package com.mightyfilipns.chipmakermc.JsonLoader;
 
 import java.util.List;
 import java.util.Map;
