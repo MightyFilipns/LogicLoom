@@ -112,8 +112,8 @@ public class Chipmakermc implements ModInitializer
     }
     public static int Wipe(CommandContext<ServerCommandSource> context)
     {
-        int maxx = Placer.do_actual_place ? 100 * Placer.X_CELL_SIZE : 100;
-        int maxz = Placer.do_actual_place ? 100 * Placer.Z_CELL_SIZE : 100;
+        int maxx = Placer.chip_size;
+        int maxz = Placer.chip_size;
         int maxy = 0;
 
         if(Placer.do_vertical)
@@ -133,10 +133,10 @@ public class Chipmakermc implements ModInitializer
         }
         else
         {
-            maxy = 1;
+            maxy = 20;
         }
 
-        for (BlockPos blockPos : BlockPos.iterate(Placer.last_pos.add(maxx, maxy, maxz), Placer.last_pos.add(0, 0, -1)))
+        for (BlockPos blockPos : BlockPos.iterate(Placer.last_pos.add(maxx, maxy, maxz), Placer.last_pos.add(0, 0, -2)))
         {
             context.getSource().getWorld().setBlockState(blockPos, Blocks.AIR.getDefaultState(), 2 | 816);
         }

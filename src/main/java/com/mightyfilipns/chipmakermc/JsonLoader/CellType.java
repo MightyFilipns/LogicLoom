@@ -23,6 +23,8 @@ public enum CellType implements StringIdentifiable {
     ANDNOT,
     @SerializedName("$_ORNOT_")
     ORNOT,
+    @SerializedName("$_DFF_P_")
+    DFF,
     ;
 
     @Override
@@ -42,6 +44,7 @@ public enum CellType implements StringIdentifiable {
             case XNOR -> Identifier.of("mcchipmaker", "logic_gate_library/xnor_gate");
             case ANDNOT -> Identifier.of("mcchipmaker", "logic_gate_library/andnot_gate");
             case ORNOT -> Identifier.of("mcchipmaker", "logic_gate_library/ornot_gate");
+            case DFF -> Identifier.of("mcchipmaker", "logic_gate_library/dff");
             default -> throw new RuntimeException("unknown cell type");
         };
     }

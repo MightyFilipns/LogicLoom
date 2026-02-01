@@ -29,9 +29,9 @@ public class RouterMisc
             }
             var cell_pos = cellmap.get(b);
             return switch (pin_name) {
-                case "A" -> cell_pos.add(-1, 0, 5);
-                case "B" -> cell_pos.add(2, 0, 5);
-                case "Y" -> cell_pos.add(-1, 0, 0);
+                case "A","C" -> cell_pos.add(-1, 0, 5);
+                case "B","D" -> cell_pos.add(2, 0, 5);
+                case "Y","Q" -> cell_pos.add(-1, 0, 0);
                 default -> throw new RuntimeException("Invalid pin name: " + pin_name);
             };
         }
@@ -63,8 +63,8 @@ public class RouterMisc
                 }
             }
             return switch (pin_name) {
-                case "A", "B" -> JsonDesign.PortDirection.Input;
-                case "Y" -> JsonDesign.PortDirection.Output;
+                case "A", "B", "C", "D" -> JsonDesign.PortDirection.Input;
+                case "Y", "Q" -> JsonDesign.PortDirection.Output;
                 default -> throw new RuntimeException("Invalid pin name: " + pin_name);
             };
         }

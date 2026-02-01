@@ -18,7 +18,6 @@ public class JsonLoadCommand
         GsonBuilder builder = new GsonBuilder();
         builder.registerTypeAdapter(boolean.class, new JsonDesign.BooleanTypeAdapter());
         var d = builder.create();
-        FileReader f = null;
         JsonDesign deg;
 
         String file_path = "";
