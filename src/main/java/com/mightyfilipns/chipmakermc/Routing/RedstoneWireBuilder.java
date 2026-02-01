@@ -1,10 +1,7 @@
 package com.mightyfilipns.chipmakermc.Routing;
 
-import com.mojang.datafixers.types.templates.Check;
-import net.minecraft.block.Block;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.HorizontalFacingBlock;
-import net.minecraft.block.RepeaterBlock;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
@@ -12,7 +9,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 
@@ -59,30 +55,6 @@ public class RedstoneWireBuilder
         if(candidates.size() > 1)
         {
             GetCandidates(candidates, h, i, new_adj, block_pos_new);
-            /*
-            if(candidates.size() == 2)
-            {
-                var c1 = candidates.get(0);
-                var c2 = candidates.get(1);
-                var rp1 = c1.getLeft();
-                var rp2 = c2.getLeft();
-                if(rp1.getX() == rp2.getX() || rp1.getZ() == rp2.getZ())
-                {
-                    // skip
-                }
-                else
-                {
-                    // TODO: properly check if the point is actually movable a.k.a is a Steiner point
-                    var p1 = h.all_points.get(c1.getRight());
-                    var p2 = h.all_points.get(c2.getRight());
-                    block_pos_new.set(c2.getRight(), p2.add(rp1));
-
-                    DisconnBranches(new_adj, i, c2.getRight());
-                    ConnBranches(new_adj, c1.getRight(), c2.getRight());
-                }
-            }
-            else
-                throw new RuntimeException("FixPointTooClose_DFS: Unhandled case candidates.size() >= 3");*/
         }
         for (Integer integer : h.adj_list.get(i))
         {
