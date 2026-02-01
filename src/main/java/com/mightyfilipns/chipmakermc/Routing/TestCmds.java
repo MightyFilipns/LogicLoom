@@ -1,6 +1,7 @@
 package com.mightyfilipns.chipmakermc.Routing;
 
 import com.mightyfilipns.chipmakermc.Chipmakermc;
+import com.mightyfilipns.chipmakermc.JsonLoader.CellType;
 import com.mightyfilipns.chipmakermc.JsonLoader.JsonDesign;
 import com.mightyfilipns.chipmakermc.Placment.Placer;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
@@ -8,6 +9,7 @@ import com.mojang.brigadier.context.CommandContext;
 import net.minecraft.block.Blocks;
 import net.minecraft.command.argument.BlockPosArgumentType;
 import net.minecraft.server.command.ServerCommandSource;
+import net.minecraft.structure.StructurePlacementData;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3i;
 import org.apache.commons.lang3.tuple.Pair;
@@ -18,6 +20,18 @@ import java.util.List;
 
 public class TestCmds
 {
+    public static int TestTemplate(CommandContext<ServerCommandSource> context)
+    {
+        var t = context.getSource().getWorld().getStructureTemplateManager();
+        var ct = CellType.NOT.getIdentifier();
+        var opt = t.getTemplate(ct);
+        var tmplt = opt.get();
+        var p = BlockPosArgumentType.getBlockPos(context, "pos");
+        var pld = new StructurePlacementData();
+        tmplt.place(context.getSource().getWorld(), p, null, pld,null, 3);
+        return 1;
+    }
+
     public static int TestLeeRouter(CommandContext<ServerCommandSource> context)
     {
         HashSet<Pair<Integer, Integer>> mp = new HashSet<>();

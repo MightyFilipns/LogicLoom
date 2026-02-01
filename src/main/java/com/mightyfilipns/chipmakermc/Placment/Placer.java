@@ -4,6 +4,7 @@ import Jama.Matrix;
 import com.mightyfilipns.chipmakermc.*;
 import com.mightyfilipns.chipmakermc.JsonLoader.AbstractCell;
 import com.mightyfilipns.chipmakermc.JsonLoader.CellInfo;
+import com.mightyfilipns.chipmakermc.JsonLoader.CellType;
 import com.mightyfilipns.chipmakermc.JsonLoader.JsonDesign;
 import com.mightyfilipns.chipmakermc.Misc.VCDHandler;
 import com.mojang.brigadier.context.CommandContext;
@@ -15,6 +16,7 @@ import net.minecraft.block.entity.SignText;
 import net.minecraft.command.argument.BlockPosArgumentType;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.structure.StructurePlacementData;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
 import org.apache.commons.lang3.tuple.Pair;
@@ -43,6 +45,8 @@ public class Placer
     public static Map<CellInfo, BlockPos> g_mp = null;
     public static int[] g_xsa = null;
     public static int[] g_zsa = null;
+
+    public static final StructurePlacementData placement_data = new StructurePlacementData();
 
     public static int PlaceCache(CommandContext<ServerCommandSource> context)
     {
@@ -164,6 +168,7 @@ public class Placer
         g_xsa = xsa;
         g_zsa = zsa;
         force_mul = oldfm;
+        last_pos = pos;
     }
 
     static final int CELL_AREA = X_CELL_SIZE * Z_CELL_SIZE;
@@ -182,18 +187,20 @@ public class Placer
     static void PlaceCellAt(int xoff, int zoff, int i, List<CellInfo> cil, CommandContext<ServerCommandSource> context, BlockPos pos, Map<CellInfo, BlockPos> mp)
     {
         var ci = cil.get(i);
-        var model_pos = Chipmakermc.celltable.get(ci.type);
+        CellType ct = ci.type;
+        ct.getIdentifier();
+        var t = context.getSource().getWorld().getStructureTemplateManager();
+        var opt = t.getTemplate(ct.getIdentifier());
+        if (opt.isEmpty())
+        {
+            throw new RuntimeException("PlaceCellAt: Failed to load cell data for cell: " + ct + " using identifier " + ct.getIdentifier() + "\n" +
+                                        "Make sure the you have loaded all needed cell libraries");
+        }
+        var tmplt = opt.get();
 
         BlockPos paste_pos = pos.add(xoff, 0, zoff);
+        tmplt.place(context.getSource().getWorld(), paste_pos, null, placement_data, null, 3);
         mp.put(ci, paste_pos);
-        var w = context.getSource().getWorld();
-        for (int x = 0; x < X_CELL_SIZE; x++) {
-            for (int y = 0; y < Y_CELL_SIZE; y++) {
-                for (int z = 0; z < Z_CELL_SIZE; z++) {
-                    w.setBlockState(paste_pos.add(x,y,z), w.getBlockState(model_pos.add(x,y,z)));
-                }
-            }
-        }
     }
 
     private static void PlaceDebug(int[] xvec, int[] zvec, CommandContext<ServerCommandSource> context, int y_offset)

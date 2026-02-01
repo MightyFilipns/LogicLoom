@@ -1,6 +1,7 @@
 package com.mightyfilipns.chipmakermc.JsonLoader;
 
 import com.google.gson.annotations.SerializedName;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.StringIdentifiable;
 
 public enum CellType implements StringIdentifiable {
@@ -27,5 +28,21 @@ public enum CellType implements StringIdentifiable {
     @Override
     public String asString() {
         return this.name();
+    }
+
+    public Identifier getIdentifier()
+    {
+        return switch (this) {
+            case NOT -> Identifier.of("mcchipmaker", "logic_gate_library/not_gate");
+            case AND -> Identifier.of("mcchipmaker", "logic_gate_library/and_gate");
+            case OR -> Identifier.of("mcchipmaker", "logic_gate_library/or_gate");
+            case XOR -> Identifier.of("mcchipmaker", "logic_gate_library/xor_gate");
+            case NOR -> Identifier.of("mcchipmaker", "logic_gate_library/nor_gate");
+            case NAND -> Identifier.of("mcchipmaker", "logic_gate_library/nand_gate");
+            case XNOR -> Identifier.of("mcchipmaker", "logic_gate_library/xnor_gate");
+            case ANDNOT -> Identifier.of("mcchipmaker", "logic_gate_library/andnot_gate");
+            case ORNOT -> Identifier.of("mcchipmaker", "logic_gate_library/ornot_gate");
+            default -> throw new RuntimeException("unknown cell type");
+        };
     }
 }

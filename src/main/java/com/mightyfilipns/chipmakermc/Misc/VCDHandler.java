@@ -27,6 +27,39 @@ public class VCDHandler
 
     public static void GetCurrentValuesAndCompare(ServerWorld w)
     {
+        Map<String, Boolean> valuemap = new HashMap<>();
+        netid_toout_pos = new HashMap<>();
+        for (HyperGraphNet hyperGraphNet : Router.cached_hy)
+        {
+            var outpos = hyperGraphNet.all_points.get(hyperGraphNet.allpoints_pos).withY(Placer.last_pos.getY());
+            var isext = w.isReceivingRedstonePower(outpos);
+            valuemap.put(id_netname.get(hyperGraphNet.net_id), isext);
+            netid_toout_pos.put(hyperGraphNet.net_id, outpos);
+        }
+        for (TwoPinNet tpn : Router.cached_tpn)
+        {
+            var outpos = tpn.p1dir == JsonDesign.PortDirection.Output ? tpn.p1.withY(Placer.last_pos.getY()) : tpn.p2.withY(Placer.last_pos.getY());
+            var isext = w.isReceivingRedstonePower(outpos);
+            valuemap.put(id_netname.get(tpn.id), isext);
+            netid_toout_pos.put(tpn.id, outpos);
+        }
+        boolean found = false;
+        for (Map.Entry<String, Boolean> en : valuemap.entrySet())
+        {
+            if (g_valuemap.get(en.getKey()) != en.getValue())
+            {
+                found = true;
+                System.out.println("Mismatch in at: " + netid_toout_pos.get(netname_toid.get(en.getKey())) + " E: " + g_valuemap.get(en.getKey()) + " F: " + en.getValue());
+            }
+        }
+        if (!found)
+        {
+            System.out.println("No mismatches found");
+        }
+    }
+
+    public static void CheckWires(ServerWorld w)
+    {
         boolean found = false;
         for (HyperGraphNet hp : Router.cached_hy)
         {
@@ -60,36 +93,6 @@ public class VCDHandler
         {
             System.out.println("No bad wires found");
         }
-/*
-        Map<String, Boolean> valuemap = new HashMap<>();
-        netid_toout_pos = new HashMap<>();
-        for (HyperGraphNet hyperGraphNet : Router.cached_hy)
-        {
-            var outpos = hyperGraphNet.all_points.get(hyperGraphNet.allpoints_pos).withY(Placer.last_pos.getY());
-            var isext = w.isReceivingRedstonePower(outpos);
-            valuemap.put(id_netname.get(hyperGraphNet.net_id), isext);
-            netid_toout_pos.put(hyperGraphNet.net_id, outpos);
-        }
-        for (TwoPinNet tpn : Router.cached_tpn)
-        {
-            var outpos = tpn.p1dir == JsonDesign.PortDirection.Output ? tpn.p1.withY(Placer.last_pos.getY()) : tpn.p2.withY(Placer.last_pos.getY());
-            var isext = w.isReceivingRedstonePower(outpos);
-            valuemap.put(id_netname.get(tpn.id), isext);
-            netid_toout_pos.put(tpn.id, outpos);
-        }
-        boolean found = false;
-        for (Map.Entry<String, Boolean> en : valuemap.entrySet())
-        {
-            if (g_valuemap.get(en.getKey()) != en.getValue())
-            {
-                found = true;
-                System.out.println("Mismatch in at: " + netid_toout_pos.get(netname_toid.get(en.getKey())) + " E: " + g_valuemap.get(en.getKey()) + " F: " + en.getValue());
-            }
-        }
-        if (!found)
-        {
-            System.out.println("No mismatches found");
-        }*/
     }
 
     private static boolean CheckPower(ServerWorld w, BlockPos outpos)

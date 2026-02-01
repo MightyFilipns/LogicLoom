@@ -2,11 +2,13 @@ package com.mightyfilipns.chipmakermc.JsonLoader;
 
 import com.google.gson.GsonBuilder;
 import com.mightyfilipns.chipmakermc.Chipmakermc;
+import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import net.minecraft.text.Text;
 import net.minecraft.server.command.*;
 
 import java.io.FileReader;
+import java.nio.file.Path;
 
 
 public class JsonLoadCommand
@@ -18,7 +20,38 @@ public class JsonLoadCommand
         var d = builder.create();
         FileReader f = null;
         JsonDesign deg;
-        try(FileReader sf = new FileReader("/run/media/Filip/E_Volume/programming/verilog/Yosys-test/Counter.json")) {
+
+        String file_path = "";
+        try {
+            file_path = StringArgumentType.getString(context, "file_path");
+            var ph = Path.of(file_path);
+            var p = ph.toFile();
+            if (!p.exists())
+            {
+                context.getSource().sendError(Text.literal("Given file does not exist: " + file_path));
+                return 0;
+            }
+            if (!p.isFile())
+            {
+                context.getSource().sendError(Text.literal("Not a file: " + file_path));
+                return 0;
+            }
+            if (!p.isFile())
+            {
+                context.getSource().sendError(Text.literal("Not a file: " + file_path));
+                return 0;
+            }
+            var dir = context.getSource().getServer().getRunDirectory();
+            if (!ph.startsWith(dir))
+            {
+                context.getSource().sendError(Text.literal("Not in a subdirectory of: " + dir));
+                return 0;
+            }
+        } catch (IllegalArgumentException e) {
+            file_path = "/run/media/Filip/E_Volume/programming/verilog/Yosys-test/Counter.json";
+        }
+
+        try(FileReader sf = new FileReader(file_path)) {
            deg = d.fromJson(sf, JsonDesign.class);
         } catch (Exception e) {
             context.getSource().sendFeedback(() -> Text.literal("Failed json parsing\n Error:" + e.getMessage()), false);

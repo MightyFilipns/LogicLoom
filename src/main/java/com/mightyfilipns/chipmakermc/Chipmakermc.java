@@ -1,18 +1,14 @@
 package com.mightyfilipns.chipmakermc;
 
 import com.google.gson.*;
-import com.google.gson.reflect.TypeToken;
-import com.mightyfilipns.chipmakermc.JsonLoader.CellType;
 import com.mightyfilipns.chipmakermc.JsonLoader.JsonDesign;
 import com.mightyfilipns.chipmakermc.JsonLoader.JsonLoadCommand;
-import com.mightyfilipns.chipmakermc.Misc.CellTypeSuggestionProvider;
 import com.mightyfilipns.chipmakermc.Misc.VCDHandler;
 import com.mightyfilipns.chipmakermc.Placment.Placer;
 import com.mightyfilipns.chipmakermc.Routing.Misc;
 import com.mightyfilipns.chipmakermc.Routing.Router;
 import com.mightyfilipns.chipmakermc.Routing.TestCmds;
 import com.mojang.brigadier.arguments.*;
-import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
@@ -26,23 +22,16 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 
-import java.util.HashMap;
-import java.util.Map;
-
 public class Chipmakermc implements ModInitializer
 {
     public static JsonDesign loaded_design = null;
-
-    public static HashMap<CellType, BlockPos> celltable = HashMap.newHashMap(10);
-
-    static String celldata = "{\"OR\":{\"x\":43,\"y\":-11,\"z\":-66},\"XNOR\":{\"x\":61,\"y\":-11,\"z\":-66},\"NAND\":{\"x\":19,\"y\":-11,\"z\":-66},\"ANDNOT\":{\"x\":67,\"y\":-11,\"z\":-66},\"XOR\":{\"x\":37,\"y\":-11,\"z\":-66},\"AND\":{\"x\":31,\"y\":-11,\"z\":-66},\"ORNOT\":{\"x\":12,\"y\":-11,\"z\":-75},\"NOR\":{\"x\":12,\"y\":-11,\"z\":-66},\"NOT\":{\"x\":25,\"y\":-11,\"z\":-66}}";
 
     @Override
     public void onInitialize()
     {
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
-            dispatcher.register(CommandManager.literal("chipmaker")
-                    .then(CommandManager.literal("load_json").executes(JsonLoadCommand::LoadJSONDesign))
+            dispatcher.register(CommandManager.literal("chipmaker").requires(CommandManager.requirePermissionLevel(CommandManager.GAMEMASTERS_CHECK))
+                    .then(CommandManager.literal("load_json").then(CommandManager.argument("file_path" ,StringArgumentType.greedyString()).executes(JsonLoadCommand::LoadJSONDesign)).executes(JsonLoadCommand::LoadJSONDesign))
                     .then(CommandManager.literal("place")
                             .then(CommandManager.argument("start_pos", BlockPosArgumentType.blockPos()).executes(Placer::PlaceDesign)))
                     .then(CommandManager.literal("place_cache")
@@ -66,11 +55,6 @@ public class Chipmakermc implements ModInitializer
                             )
                     )
                     .then(CommandManager.literal("wipe").executes(Chipmakermc::Wipe))
-                    .then(CommandManager.literal("cell_registry")
-                            .then(RegisterCellCmd())
-                            .then(RegisterJSONCell())
-                            .executes(Chipmakermc::HandleCellMapPrint)
-                    )
                     .then(CommandManager.literal("route")
                             .then(CommandManager.literal("test_tree").then(CommandManager.argument("start_pos", BlockPosArgumentType.blockPos()).executes(TestCmds::TestTree)))
                             .then(CommandManager.literal("test_hyper").then(CommandManager.argument("start_pos", BlockPosArgumentType.blockPos()).executes(TestCmds::TestHyperGraph)))
@@ -83,10 +67,14 @@ public class Chipmakermc implements ModInitializer
                             .then(CommandManager.literal("test_wire")
                                     .then(CommandManager.argument("index", IntegerArgumentType.integer(0))
                                     .executes(TestCmds::BuildWire)))
+                            .then(CommandManager.literal("test_template")
+                                    .then(CommandManager.argument("pos", BlockPosArgumentType.blockPos())
+                                    .executes(TestCmds::TestTemplate)))
                     )
                     .then(CommandManager.literal("debug")
                             .then(CommandManager.literal("vcddebug").executes(Chipmakermc::VCDDebug))
-                            .then(CommandManager.literal("vcdcomp").executes(Chipmakermc::VCDComp)))
+                            .then(CommandManager.literal("vcdcomp").executes(Chipmakermc::VCDComp))
+                            .then(CommandManager.literal("check_wires").executes(Chipmakermc::CheckWires)))
             );
         });
 
@@ -115,6 +103,11 @@ public class Chipmakermc implements ModInitializer
     public static int VCDComp(CommandContext<ServerCommandSource> context)
     {
         VCDHandler.GetCurrentValuesAndCompare(context.getSource().getWorld());
+        return 1;
+    }
+    public static int CheckWires(CommandContext<ServerCommandSource> context)
+    {
+        VCDHandler.CheckWires(context.getSource().getWorld());
         return 1;
     }
     public static int Wipe(CommandContext<ServerCommandSource> context)
@@ -147,58 +140,6 @@ public class Chipmakermc implements ModInitializer
         {
             context.getSource().getWorld().setBlockState(blockPos, Blocks.AIR.getDefaultState(), 2 | 816);
         }
-        return 1;
-    }
-
-    public ArgumentBuilder<ServerCommandSource, ?> RegisterJSONCell()
-    {
-        return CommandManager.literal("load").executes(Chipmakermc::HandleCellMapRead);
-    }
-
-    public ArgumentBuilder<ServerCommandSource, ?> RegisterCellCmd()
-    {
-        return CommandManager.literal("register_cell").then(CommandManager.argument("block_pos", BlockPosArgumentType.blockPos()).then(CommandManager.argument("cell_enum", StringArgumentType.word()).suggests(CellTypeSuggestionProvider.Provider()).executes(Chipmakermc::HandleCellRegister)));
-    }
-
-    static int HandleCellMapRead(CommandContext<ServerCommandSource> context)
-    {
-        GsonBuilder gb = new GsonBuilder();
-        gb.setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE);
-
-        Gson g = gb.create();
-
-        var d = g.fromJson(celldata, new TypeToken<HashMap<CellType, BlockPos>>(){}.getType());
-
-        celltable = (HashMap<CellType, BlockPos>) d;
-
-        context.getSource().sendFeedback(() -> Text.literal("Loaded table from json"), false);
-
-        return 1;
-    }
-
-    static int HandleCellMapPrint(CommandContext<ServerCommandSource> context)
-    {
-        for (Map.Entry<CellType, BlockPos> cte : celltable.entrySet())
-        {
-            context.getSource().sendFeedback(() -> Text.literal(String.format("%s - %s", cte.getKey(), cte.getValue())), false);
-        }
-        GsonBuilder gb = new GsonBuilder();
-        gb.setFormattingStyle(FormattingStyle.COMPACT);
-        Gson g = gb.create();
-        var s = g.toJson(celltable);
-        System.out.println(s);
-        return 1;
-    }
-
-    static int HandleCellRegister(CommandContext<ServerCommandSource> context)
-    {
-        var cellt = CellType.valueOf(StringArgumentType.getString(context, "cell_enum"));
-        var pos = BlockPosArgumentType.getBlockPos(context, "block_pos");
-
-        celltable.put(cellt, pos);
-
-        context.getSource().sendFeedback(() -> Text.literal("Added"), false);
-
         return 1;
     }
 
