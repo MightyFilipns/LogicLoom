@@ -106,9 +106,11 @@ public class Placer
 
         double oldfm = force_mul;
 
-        AddFixedVirtualCell(connection_m, c_x, c_z,  (int)(chip_size / 1.5D), (int)(chip_size / 1.5D), 1);
-        AddFixedVirtualCell(connection_m, c_x, c_z,  (int)(chip_size / 1.5D), 0, 1);
-        AddFixedVirtualCell(connection_m, c_x, c_z,  0, (int)(chip_size / 1.5D), 1);
+        //AddFixedVirtualCell(connection_m, c_x, c_z,  (int)(chip_size / 1.5D), (int)(chip_size / 1.5D), 1);
+        //AddFixedVirtualCell(connection_m, c_x, c_z,  (int)(chip_size / 1.5D), 0, 1);
+        //AddFixedVirtualCell(connection_m, c_x, c_z,  0, (int)(chip_size / 1.5D), 1);
+
+        AddFixedVirtualCell(connection_m, c_x, c_z,  (int)(chip_size / 2), (int)(chip_size / 2), 1);
 
         Matrix x_sol = null;
         Matrix z_sol = null;
@@ -188,7 +190,6 @@ public class Placer
     {
         var ci = cil.get(i);
         CellType ct = ci.type;
-        ct.getIdentifier();
         var t = context.getSource().getWorld().getStructureTemplateManager();
         var opt = t.getTemplate(ct.getIdentifier());
         if (opt.isEmpty())
@@ -254,7 +255,7 @@ public class Placer
                 double z2 = zsol.get(j,0);
 
                 double euclidean_dist = ((x - x2) * (x - x2)) + ((z - z2) * (z - z2));
-                if(!Double.isNaN(euclidean_dist))
+                if(!Double.isNaN(euclidean_dist) && euclidean_dist != 0)
                 {
                     force_sumx += (1 * (x - x2)) / euclidean_dist;
                     force_sumz += (1 * (z - z2)) / euclidean_dist;
@@ -410,8 +411,8 @@ public class Placer
 
     private static void SetPortSignAndBlock(ServerWorld w, Map.Entry<String, JsonDesign.DesignPortInfo> value, Integer bit, BlockPos npos)
     {
-        w.setBlockState(npos.add(0, 0, -1), value.getValue().direction == JsonDesign.PortDirection.Input ?  Blocks.RED_WOOL.getDefaultState() : Blocks.REDSTONE_LAMP.getDefaultState());
-        w.setBlockState(npos.add(0, 1, -1), Blocks.OAK_SIGN.getDefaultState().with(SignBlock.ROTATION, 8));
-        ((SignBlockEntity) w.getBlockEntity(npos.add(0,1,-1))).setText(new SignText().withMessage(1, Text.of(String.format("%s - %d", value.getKey(), bit))), true);
+        w.setBlockState(npos.add(0, 0, -1), value.getValue().direction == JsonDesign.PortDirection.Input ?  Blocks.LEVER.getDefaultState() : Blocks.REDSTONE_LAMP.getDefaultState());
+        w.setBlockState(npos.add(1, 0, -1), Blocks.OAK_SIGN.getDefaultState().with(SignBlock.ROTATION, 8));
+        ((SignBlockEntity) w.getBlockEntity(npos.add(1, 0, -1))).setText(new SignText().withMessage(1, Text.of(String.format("%s - %d", value.getKey(), bit))), true);
     }
 }

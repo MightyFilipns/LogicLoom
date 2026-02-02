@@ -41,7 +41,8 @@ public class JsonLoadCommand
                 return 0;
             }
             var dir = context.getSource().getServer().getRunDirectory();
-            if (!ph.startsWith(dir))
+            // Allow singe player worlds to load from anywhere
+            if (!ph.startsWith(dir) && context.getSource().getServer().isDedicated())
             {
                 context.getSource().sendError(Text.literal("Not in a subdirectory of: " + dir));
                 return 0;
