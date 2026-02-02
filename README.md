@@ -32,7 +32,7 @@ This command compares start point of all wires and check if the power is the sam
 If not problematic ones are print in the chat. If there are any issues they are usually obvious.
 
 This command can find bad wires even if everything appears to behave correctly as those bad wires might not be currently affecting the output.
-However, it might not always find all bad wires. So you should a few input signals and rerunning this command.
+However, it might not always find all bad wires. So you should change a few input signals and rerun this command.
 You must wait for all signals to propagate otherwise you will bad results.
 You can speed this up with /tick sprint
 
