@@ -1,6 +1,5 @@
 package com.mightyfilipns.chipmakermc;
 
-import com.google.gson.*;
 import com.mightyfilipns.chipmakermc.JsonLoader.JsonDesign;
 import com.mightyfilipns.chipmakermc.JsonLoader.JsonLoadCommand;
 import com.mightyfilipns.chipmakermc.Misc.VCDHandler;
@@ -128,7 +127,7 @@ public class Chipmakermc implements ModInitializer
             }
             else
             {
-                maxy = Placer.Y_CELL_SIZE;
+                maxy = Placer.Y_MAX_CELL_SIZE;
             }
         }
         else

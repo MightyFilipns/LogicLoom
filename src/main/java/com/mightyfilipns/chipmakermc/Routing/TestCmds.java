@@ -109,7 +109,7 @@ public class TestCmds
         //RedstoneWireBuilder.FixHypergraphAdjList(0, h);
         //RedstoneWireBuilder.BuildHypergraph(context.getSource().getWorld(), h, Router.g_rep_map, NewPlacer.last_pos.getY() + NewPlacer.Y_CELL_SIZE);
         TwoPinNet tpn = Router.cached_tpn.get(index);
-        RedstoneWireBuilder.BuildTwoPin(context.getSource().getWorld(), tpn, Placer.last_pos.getY() + Placer.Y_CELL_SIZE);
+        RedstoneWireBuilder.BuildTwoPin(context.getSource().getWorld(), tpn, Placer.last_pos.getY() + Placer.Y_MAX_CELL_SIZE);
         return 1;
     }
 

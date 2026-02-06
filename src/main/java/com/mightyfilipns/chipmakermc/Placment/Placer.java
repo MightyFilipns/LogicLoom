@@ -29,9 +29,8 @@ import static java.lang.Math.min;
 
 public class Placer
 {
-    public final static int Z_CELL_SIZE = 8;
-    public final static int X_CELL_SIZE = 6;
-    public final static int Y_CELL_SIZE = 4;
+    public final static int Y_MAX_CELL_SIZE = 4;
+    public static final int PORT_SPACING = 6;
     public static double force_mul = 0.05D;
     public static int max_iter = 137;
     public static int chip_size = 400;
@@ -58,7 +57,9 @@ public class Placer
 
         var pos = BlockPosArgumentType.getBlockPos(context, "start_pos");
 
-        PlaceCells(g_xsa, g_zsa, context, pos, mod, g_mp);
+        List<CellInfo> cell_list = mod.cells.values().stream().sorted(Comparator.comparingInt(a -> a.cell_ID)).toList();
+
+        PlaceCells(g_xsa, g_zsa, context, pos, cell_list, g_mp);
 
         return 1;
     }
@@ -69,7 +70,9 @@ public class Placer
         var mod = (JsonDesign.DesignModule)des.modules.values().toArray()[0];
 
         int avaliable_area = chip_size * chip_size;
-        int min_area = mod.cells.size() * CELL_AREA;
+
+        var min_area = (Integer) mod.cells.values().stream().mapToInt(a -> a.type.area).sum();
+
         if (min_area > avaliable_area)
         {
             context.getSource().sendError(Text.literal(String.format("Build area too small: Available area (X: %d * Z: %d) = %d : Minimum area: %d", chip_size, chip_size, avaliable_area, min_area)));
@@ -115,6 +118,8 @@ public class Placer
         Matrix f_x = new Matrix(mod.cells.size(), 1);
         Matrix f_z = new Matrix(mod.cells.size(), 1);
 
+        List<CellInfo> cell_list = mod.cells.values().stream().sorted(Comparator.comparingInt(a -> a.cell_ID)).toList();
+
         int iter = 0;
         boolean has_overlap = false;
         boolean obb = false;
@@ -129,8 +134,8 @@ public class Placer
             // Sanity check
             if(iter > max_iter || obb)
             {
-                Legalize(xsa, zsa);
-                var d = GetDensity(xsa, zsa);
+                Legalize(xsa, zsa, cell_list);
+                var d = GetDensity(xsa, zsa, cell_list);
                 int cnt = MarkOverlapPos(d, context, 1);
                 context.getSource().sendFeedback(() -> Text.literal("Max iter reached - " + max_iter + " Overlaps: " + cnt), false);
                 break;
@@ -143,7 +148,7 @@ public class Placer
             xsa = RoundMtxSol(x_sol, 1);
             zsa = RoundMtxSol(z_sol, 1);
 
-            has_overlap = CheckOverlap(xsa, zsa);
+            has_overlap = CheckOverlap(xsa, zsa, cell_list);
 
             System.out.println("Iter: " + iter);
 
@@ -151,7 +156,7 @@ public class Placer
 
             if(has_overlap)
             {
-                FixOverLapPossion(x_sol, z_sol, f_x, f_z, xsa, zsa);
+                FixOverLapPossion(x_sol, z_sol, f_x, f_z, cell_list);
             }
 
             iter++;
@@ -159,9 +164,9 @@ public class Placer
 
 
         if(do_actual_place)
-            PlaceCells(xsa, zsa, context, pos, mod, mp);
+            PlaceCells(xsa, zsa, context, pos, cell_list, mp);
         else
-            PlaceDebug(xsa, zsa, context, 0);
+            PlaceDebug(xsa, zsa, context, 0, cell_list);
 
         g_mp = mp;
         g_xsa = xsa;
@@ -170,16 +175,13 @@ public class Placer
         last_pos = pos;
     }
 
-    static final int CELL_AREA = X_CELL_SIZE * Z_CELL_SIZE;
-
-    private static void PlaceCells(int[] xvec, int[] zvec, CommandContext<ServerCommandSource> context, BlockPos pos, JsonDesign.DesignModule mod, Map<CellInfo, BlockPos> mp)
+    private static void PlaceCells(int[] xvec, int[] zvec, CommandContext<ServerCommandSource> context, BlockPos pos, List<CellInfo> cell_list, Map<CellInfo, BlockPos> mp)
     {
-        List<CellInfo> v = mod.cells.values().stream().sorted(Comparator.comparingInt(a -> a.cell_ID)).toList();
         for (int i = 0; i < xvec.length; i++)
         {
             int x_offset = max(min(xvec[i], chip_size), 0);
             int z_offset = max(min(zvec[i], chip_size), 0);
-            PlaceCellAt(x_offset, z_offset, i, v, context, pos, mp);
+            PlaceCellAt(x_offset, z_offset, i, cell_list, context, pos, mp);
         }
     }
 
@@ -201,21 +203,22 @@ public class Placer
         mp.put(ci, paste_pos);
     }
 
-    private static void PlaceDebug(int[] xvec, int[] zvec, CommandContext<ServerCommandSource> context, int y_offset)
+    private static void PlaceDebug(int[] xvec, int[] zvec, CommandContext<ServerCommandSource> context, int y_offset, List<CellInfo> cell_list)
     {
         BlockPos pos = BlockPosArgumentType.getBlockPos(context, "start_pos");
         for (int i = 0; i < xvec.length; i++)
         {
             int x_offset = ClampVal(xvec[i], chip_size);
             int z_offset = ClampVal(zvec[i], chip_size);
+            CellType ct = cell_list.get(i).type;
             if(x_offset != xvec[i] || z_offset != zvec[i])
             {
                 System.out.println("OBB at Z: " + zvec[i] + " X:" + xvec[i]);
             }
             BlockState defaultState = x_offset != xvec[i] || z_offset != zvec[i] ? Blocks.YELLOW_WOOL.getDefaultState() : Blocks.LIGHT_BLUE_WOOL.getDefaultState();
-            for (int x = 0; x < X_CELL_SIZE; x++)
+            for (int x = 0; x < ct.x_size; x++)
             {
-                for (int z = 0; z < Z_CELL_SIZE; z++)
+                for (int z = 0; z < ct.z_size; z++)
                 {
                     context.getSource().getWorld().setBlockState(pos.add(x_offset + x, y_offset, z_offset + z), defaultState);
                 }
@@ -229,10 +232,9 @@ public class Placer
     }
 
     // TODO: Implement this using Barnes-Hut quad tress.
-    private static void FixOverLapPossion(Matrix xsol, Matrix zsol, Matrix f_x, Matrix f_z, int[] xsa, int[] zsa)
+    private static void FixOverLapPossion(Matrix xsol, Matrix zsol, Matrix f_x, Matrix f_z, List<CellInfo> cell_list)
     {
         int cc = xsol.getRowDimension();
-        HashMap<Pair<Integer, Integer>, Integer> density = GetDensityQuick(xsa, zsa); //GetDensity(xsa, zsa);
         Matrix nfx = new Matrix(cc, 1);
         Matrix nfz = new Matrix(cc, 1);
         double absmaxx = 0;
@@ -254,8 +256,9 @@ public class Placer
                 double euclidean_dist = ((x - x2) * (x - x2)) + ((z - z2) * (z - z2));
                 if(!Double.isNaN(euclidean_dist) && euclidean_dist != 0)
                 {
-                    force_sumx += (CELL_AREA * (x - x2)) / euclidean_dist;
-                    force_sumz += (CELL_AREA * (z - z2)) / euclidean_dist;
+                    var ca = cell_list.get(i).type.area;
+                    force_sumx += (ca * (x - x2)) / euclidean_dist;
+                    force_sumz += (ca * (z - z2)) / euclidean_dist;
                 }
             }
             absmaxx = max(absmaxx, abs(force_sumx));
@@ -321,17 +324,18 @@ public class Placer
         return cnt;
     }
 
-    private static @NonNull HashMap<Pair<Integer, Integer>, Integer> GetDensity(int[] x, int[] z)
+    private static @NonNull HashMap<Pair<Integer, Integer>, Integer> GetDensity(int[] x, int[] z, List<CellInfo> cell_list)
     {
         var ret = new HashMap<Pair<Integer, Integer>, Integer>();
 
         for (int i = 0; i < x.length; i++)
         {
+            var ct = cell_list.get(i).type;
             var xstart = x[i];
             var zstart = z[i];
-            for (int j = 0; j < X_CELL_SIZE; j++)
+            for (int j = 0; j < ct.x_size; j++)
             {
-                for (int i1 = 0; i1 < Z_CELL_SIZE; i1++)
+                for (int i1 = 0; i1 < ct.z_size; i1++)
                 {
                     var p = Pair.of(ClampVal(xstart + j, chip_size), ClampVal(zstart + i1, chip_size));
                     var v = ret.computeIfAbsent(p, a -> 0);
@@ -343,33 +347,18 @@ public class Placer
         return ret;
     }
 
-    private static @NonNull HashMap<Pair<Integer, Integer>, Integer> GetDensityQuick(int[] x, int[] z)
-    {
-        var ret = new HashMap<Pair<Integer, Integer>, Integer>();
-
-        for (int i = 0; i < x.length; i++)
-        {
-            var xstart = x[i];
-            var zstart = z[i];
-            var p = Pair.of(xstart / X_CELL_SIZE, zstart / Z_CELL_SIZE);
-            var v = ret.computeIfAbsent(p, a -> 0);
-            v++;
-            ret.put(p, v);
-        }
-        return ret;
-    }
-
-    private static boolean CheckOverlap(int[] x, int [] z)
+    private static boolean CheckOverlap(int[] x, int [] z, List<CellInfo> cell_list)
     {
         var ret = new HashSet<Pair<Integer, Integer>>();
 
         for (int i = 0; i < x.length; i++)
         {
+            var ct = cell_list.get(i).type;
             var xstart = x[i];
             var zstart = z[i];
-            for (int j = 0; j < X_CELL_SIZE; j++)
+            for (int j = 0; j < ct.x_size; j++)
             {
-                for (int i1 = 0; i1 < Z_CELL_SIZE; i1++)
+                for (int i1 = 0; i1 < ct.z_size; i1++)
                 {
                     if(!ret.add(Pair.of(xstart + j, zstart + i1)))
                         return true;
@@ -388,7 +377,7 @@ public class Placer
             for (Integer bit : value.getValue().bits)
             {
                 int x = x_counter * 3;
-                int xworldpos = x_counter * X_CELL_SIZE;
+                int xworldpos = x_counter * PORT_SPACING;
 
                 var npos = pos.add(xworldpos,0,z);
 

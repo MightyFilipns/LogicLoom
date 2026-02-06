@@ -83,7 +83,7 @@ public class Router
             }
         }
 
-        int starty = pos.getY() + Placer.Y_CELL_SIZE;
+        int starty = pos.getY() + Placer.Y_MAX_CELL_SIZE;
 
         int i = 0;
         cached_hy = hy;
@@ -160,7 +160,7 @@ public class Router
         }
         var w = context.getSource().getWorld();
         int i = 0;
-        int starty = Placer.last_pos.getY() + Placer.Y_CELL_SIZE;
+        int starty = Placer.last_pos.getY() + Placer.Y_MAX_CELL_SIZE;
         for (HyperGraphNet hp : cached_hy)
         {
             System.out.println("Building hypergraph " + (i + 1) + " of " + cached_hy.size());

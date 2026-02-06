@@ -12,7 +12,7 @@ public class VerticalBuilder
 
     public static void BuildUpwards(ServerWorld w, BlockPos down, BlockPos upper)
     {
-        var starty = down.getY() + Placer.Y_CELL_SIZE;
+        var starty = down.getY() + Placer.Y_MAX_CELL_SIZE;
         var ylevel = (upper.getY() - starty) / 2;
         w.setBlockState(down, Blocks.LIME_WOOL.getDefaultState(), NO_UPDATE);
         if(ylevel % 2 == 1)
@@ -57,7 +57,7 @@ public class VerticalBuilder
             w.setBlockState(tpos.withY(i - 1), Blocks.REDSTONE_WIRE.getDefaultState(), NO_UPDATE);
             side = !side;
         }
-        var starty = down.getY() + Placer.Y_CELL_SIZE;
+        var starty = down.getY() + Placer.Y_MAX_CELL_SIZE;
         var ylevel = (upper.getY() - starty) / 2;
         if (ylevel % 2 == 0)
         {

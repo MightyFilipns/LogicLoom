@@ -5,13 +5,15 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.StringIdentifiable;
 import net.minecraft.util.math.BlockPos;
 
+import java.util.Objects;
+
 public enum CellType implements StringIdentifiable {
     @SerializedName("$_NOT_")
     NOT(4, 4 ,5, GATE_A(1, 3), GATE_Y(0, 0)),
     @SerializedName("$_AND_")
     AND(6, 4 ,5, GATE_A(0, 3), GATE_B(3, 3),  GATE_Y(0, 0)),
     @SerializedName("$_OR_")
-    OR(6, 4 ,8, GATE_A(0, 0), GATE_B(0, 2),  GATE_Y(3, 1)),
+    OR(5, 4 ,4, GATE_A(0, 0), GATE_B(0, 2),  GATE_Y(3, 1)),
     @SerializedName("$_XOR_")
     XOR(6, 4 ,7, GATE_A(0, 5), GATE_B(3, 5),  GATE_Y(0, 0)),
     @SerializedName("$_NOR_")
@@ -19,7 +21,7 @@ public enum CellType implements StringIdentifiable {
     @SerializedName("$_NAND_")
     NAND(6, 4 ,5, GATE_A(0, 3), GATE_B(3, 3),  GATE_Y(0, 0)),
     @SerializedName("$_XNOR_")
-    XNOR(6, 4 ,8, GATE_A(0, 4), GATE_B(3, 4),  GATE_Y(0, 0)),
+    XNOR(6, 4 ,6, GATE_A(0, 4), GATE_B(3, 4),  GATE_Y(0, 0)),
     @SerializedName("$_ANDNOT_")
     ANDNOT(6, 4 ,5,  GATE_A(0, 3), GATE_B(3, 3),  GATE_Y(0, 0)),
     @SerializedName("$_ORNOT_")
@@ -27,7 +29,7 @@ public enum CellType implements StringIdentifiable {
     @SerializedName("$_DFF_P_")
     DFF(6, 4 ,7,  PORT_C(0, 5), PORT_D(3, 5),  PORT_Q(1, 0)),
     @SerializedName("$_DLATCH_P_")
-    DLATCH(6, 4 ,8,  PORT_E(0, 4), PORT_D(2, 3),  PORT_Q(1, 0)),
+    DLATCH(5, 4 ,6,  PORT_E(0, 4), PORT_D(2, 3),  PORT_Q(1, 0)),
     ;
 
     public static PortInfo GATE_A(int x, int z){ return new PortInfo("A", new BlockPos(x, 0, z), PortDirection.Input); }
@@ -47,6 +49,16 @@ public enum CellType implements StringIdentifiable {
     public final PortInfo[] ports;
 
     public record PortInfo(String name, BlockPos relpos, PortDirection dir) {}
+
+    public PortInfo GetPort(String port)
+    {
+        for (PortInfo portInfo : ports)
+        {
+            if (Objects.equals(portInfo.name, port))
+                return portInfo;
+        }
+        throw new RuntimeException("GetPort: cant find port " + port + " in cell " + this);
+    }
 
     CellType(int xSize, int ySize, int zSize, PortInfo... ports)
     {

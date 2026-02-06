@@ -28,13 +28,8 @@ public class RouterMisc
                     }
                 }
             }
-            var cell_pos = cellmap.get(b);
-            return switch (pin_name) {
-                case "A","C","E" -> cell_pos.add(-1, 0, 5);
-                case "B","D" -> cell_pos.add(2, 0, 5);
-                case "Y","Q" -> cell_pos.add(-1, 0, 0);
-                default -> throw new RuntimeException("Invalid pin name: " + pin_name);
-            };
+
+            return b.type.GetPort(pin_name).relpos().add(cellmap.get(b));
         }
         else if(a instanceof JsonDesign.DesignPortInfo)
         {
@@ -52,6 +47,7 @@ public class RouterMisc
         if(a instanceof CellInfo b)
         {
             String pin_name = "";
+
             for (Map.Entry<String, List<Integer>> stringListEntry : b.connections.entrySet())
             {
                 for (Integer i : stringListEntry.getValue())
@@ -63,11 +59,8 @@ public class RouterMisc
                     }
                 }
             }
-            return switch (pin_name) {
-                case "A", "B", "C", "D", "E" -> PortDirection.Input;
-                case "Y", "Q" -> PortDirection.Output;
-                default -> throw new RuntimeException("Invalid pin name: " + pin_name);
-            };
+
+            return b.port_directions.get(pin_name);
         }
         else if(a instanceof JsonDesign.DesignPortInfo p)
         {
