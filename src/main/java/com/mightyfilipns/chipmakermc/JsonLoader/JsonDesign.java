@@ -1,7 +1,6 @@
 package com.mightyfilipns.chipmakermc.JsonLoader;
 
 import com.google.gson.*;
-import com.google.gson.annotations.SerializedName;
 
 import java.lang.reflect.Type;
 import java.util.List;
@@ -23,21 +22,6 @@ public class JsonDesign
     {
         public PortDirection direction;
         public List<Integer> bits;
-    }
-
-    public enum PortDirection
-    {
-        @SerializedName("input")
-        Input,
-        @SerializedName("output")
-        Output,
-        @SerializedName("inout")
-        Inout;
-
-        public PortDirection Invert()
-        {
-            return this == Input ? Output : Input;
-        }
     }
 
     public class JsonWire

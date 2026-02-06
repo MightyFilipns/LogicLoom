@@ -3,6 +3,7 @@ package com.mightyfilipns.chipmakermc.Routing;
 import com.mightyfilipns.chipmakermc.JsonLoader.CellInfo;
 import com.mightyfilipns.chipmakermc.JsonLoader.JsonDesign;
 import com.mightyfilipns.chipmakermc.JsonLoader.AbstractCell;
+import com.mightyfilipns.chipmakermc.JsonLoader.PortDirection;
 import net.minecraft.util.math.BlockPos;
 
 import java.util.List;
@@ -46,7 +47,7 @@ public class RouterMisc
         }
     }
 
-    public static JsonDesign.PortDirection GetDir(AbstractCell a, Integer conn)
+    public static PortDirection GetDir(AbstractCell a, Integer conn)
     {
         if(a instanceof CellInfo b)
         {
@@ -63,14 +64,14 @@ public class RouterMisc
                 }
             }
             return switch (pin_name) {
-                case "A", "B", "C", "D", "E" -> JsonDesign.PortDirection.Input;
-                case "Y", "Q" -> JsonDesign.PortDirection.Output;
+                case "A", "B", "C", "D", "E" -> PortDirection.Input;
+                case "Y", "Q" -> PortDirection.Output;
                 default -> throw new RuntimeException("Invalid pin name: " + pin_name);
             };
         }
         else if(a instanceof JsonDesign.DesignPortInfo p)
         {
-            return p.direction == JsonDesign.PortDirection.Input ? JsonDesign.PortDirection.Output : JsonDesign.PortDirection.Input;
+            return p.direction == PortDirection.Input ? PortDirection.Output : PortDirection.Input;
         }
         else
         {

@@ -1,6 +1,6 @@
 package com.mightyfilipns.chipmakermc.Routing;
 
-import com.mightyfilipns.chipmakermc.JsonLoader.JsonDesign;
+import com.mightyfilipns.chipmakermc.JsonLoader.PortDirection;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import org.apache.commons.lang3.tuple.Pair;
@@ -13,10 +13,10 @@ public class ObstacleFixer
     static void FixObstaclesHyperGraph(HyperGraphNet hp, ObstacleMap port_map, ServerWorld w, int y)
     {
         port_map.TempExclude(hp.pin_port_pos.stream().map(a -> Misc.MakeObstMapFromPortRemove(a,
-                a == hp.pin_port_pos.get(hp.out_port_pos) ? JsonDesign.PortDirection.Output : JsonDesign.PortDirection.Input)).toList());
+                a == hp.pin_port_pos.get(hp.out_port_pos) ? PortDirection.Output : PortDirection.Input)).toList());
 
         port_map.SetFullExclude(hp.pin_port_pos.stream().map(a -> Misc.MakeObstMapFromPort(a,
-                a == hp.pin_port_pos.get(hp.out_port_pos) ? JsonDesign.PortDirection.Output : JsonDesign.PortDirection.Input)).toList());
+                a == hp.pin_port_pos.get(hp.out_port_pos) ? PortDirection.Output : PortDirection.Input)).toList());
 
         List<List<Integer>> adj_list = new ArrayList<>();
         List<BlockPos> all_points = new ArrayList<>();
@@ -177,7 +177,7 @@ public class ObstacleFixer
             ConnBranches(adjl, 0 ,1);
 
             tpn.adj_list = adjl;
-            tpn.point_list = tpn.p1dir == JsonDesign.PortDirection.Output ? blks : blks.reversed();
+            tpn.point_list = tpn.p1dir == PortDirection.Output ? blks : blks.reversed();
         }
         else if(mid2_possible || mid1_possible)
         {
@@ -194,7 +194,7 @@ public class ObstacleFixer
             blks.add(fmid);
             blks.add(p2);
             tpn.adj_list = adjl;
-            tpn.point_list = tpn.p1dir == JsonDesign.PortDirection.Output ? blks : blks.reversed();
+            tpn.point_list = tpn.p1dir == PortDirection.Output ? blks : blks.reversed();
         }
         else
         {
@@ -207,7 +207,7 @@ public class ObstacleFixer
                 adjl.add(new ArrayList<>());
                 ConnBranches(adjl, i - 1, i);
             }
-            tpn.point_list = tpn.p1dir == JsonDesign.PortDirection.Output ? blks.reversed() : blks;
+            tpn.point_list = tpn.p1dir == PortDirection.Output ? blks.reversed() : blks;
             tpn.adj_list = adjl;
         }
     }

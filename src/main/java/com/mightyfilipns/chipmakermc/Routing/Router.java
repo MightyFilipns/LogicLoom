@@ -3,6 +3,7 @@ package com.mightyfilipns.chipmakermc.Routing;
 import com.mightyfilipns.chipmakermc.JsonLoader.CellInfo;
 import com.mightyfilipns.chipmakermc.JsonLoader.JsonDesign;
 import com.mightyfilipns.chipmakermc.JsonLoader.AbstractCell;
+import com.mightyfilipns.chipmakermc.JsonLoader.PortDirection;
 import com.mightyfilipns.chipmakermc.Placment.Placer;
 import com.mojang.brigadier.context.CommandContext;
 import net.minecraft.block.BlockState;
@@ -77,7 +78,7 @@ public class Router
             for (int i = 0; i < hyperGraphNet.pin_port_pos.size(); i++)
             {
                 var pinPortPo = hyperGraphNet.pin_port_pos.get(i);
-                JsonDesign.PortDirection dir = i == hyperGraphNet.out_port_pos ? JsonDesign.PortDirection.Output : JsonDesign.PortDirection.Input;
+                PortDirection dir = i == hyperGraphNet.out_port_pos ? PortDirection.Output : PortDirection.Input;
                 port_map.addAll(Misc.MakeObstMapFromPort(pinPortPo, dir));
             }
         }
@@ -121,7 +122,7 @@ public class Router
         System.out.println("Building two pin vertical connectors");
         for (TwoPinNet tp : tpn)
         {
-            if (tp.p1dir == JsonDesign.PortDirection.Input)
+            if (tp.p1dir == PortDirection.Input)
             {
                 VerticalBuilder.BuildUpwards(w, tp.p2, tp.p2.withY(starty + tp.y_pos * 2));
                 VerticalBuilder.BuildDownwards(w, tp.p1, tp.p1.withY(starty + tp.y_pos * 2));
@@ -289,7 +290,7 @@ public class Router
             for (AbstractCell abstractCell : integerListEntry.getValue())
             {
                 rel_block_pos.add(RouterMisc.GetRelPos(cellmap, abstractCell, integerListEntry.getKey(), port_rel_pos));
-                if (RouterMisc.GetDir(abstractCell, integerListEntry.getKey()) == JsonDesign.PortDirection.Output)
+                if (RouterMisc.GetDir(abstractCell, integerListEntry.getKey()) == PortDirection.Output)
                 {
                     out_index = rel_block_pos.size() - 1;
                 }

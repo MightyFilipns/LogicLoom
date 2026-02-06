@@ -7,6 +7,6 @@ public class CellInfo extends AbstractCell
 {
     public boolean hide_name;
     public CellType type;
-    public Map<String, JsonDesign.PortDirection> port_directions;
+    public Map<String, PortDirection> port_directions;
     public Map<String, List<Integer>> connections;
 }

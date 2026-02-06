@@ -1,6 +1,7 @@
 package com.mightyfilipns.chipmakermc.Misc;
 
 import com.mightyfilipns.chipmakermc.JsonLoader.JsonDesign;
+import com.mightyfilipns.chipmakermc.JsonLoader.PortDirection;
 import com.mightyfilipns.chipmakermc.Placment.Placer;
 import com.mightyfilipns.chipmakermc.Routing.HyperGraphNet;
 import com.mightyfilipns.chipmakermc.Routing.Router;
@@ -38,7 +39,7 @@ public class VCDHandler
         }
         for (TwoPinNet tpn : Router.cached_tpn)
         {
-            var outpos = tpn.p1dir == JsonDesign.PortDirection.Output ? tpn.p1.withY(Placer.last_pos.getY()) : tpn.p2.withY(Placer.last_pos.getY());
+            var outpos = tpn.p1dir == PortDirection.Output ? tpn.p1.withY(Placer.last_pos.getY()) : tpn.p2.withY(Placer.last_pos.getY());
             var isext = w.isReceivingRedstonePower(outpos);
             valuemap.put(id_netname.get(tpn.id), isext);
             netid_toout_pos.put(tpn.id, outpos);
@@ -78,8 +79,8 @@ public class VCDHandler
         }
         for (TwoPinNet hp : Router.cached_tpn)
         {
-            var outpos = hp.p1dir == JsonDesign.PortDirection.Output ? hp.p1 : hp.p2;
-            var inpos = hp.p1dir == JsonDesign.PortDirection.Output ? hp.p2 : hp.p1;
+            var outpos = hp.p1dir == PortDirection.Output ? hp.p1 : hp.p2;
+            var inpos = hp.p1dir == PortDirection.Output ? hp.p2 : hp.p1;
             var pwr1 = CheckPower(w, outpos.withY(Placer.last_pos.getY()));
             var pwr2 = CheckPower(w, inpos.withY(Placer.last_pos.getY()));
 

@@ -1,6 +1,6 @@
 package com.mightyfilipns.chipmakermc.Routing;
 
-import com.mightyfilipns.chipmakermc.JsonLoader.JsonDesign;
+import com.mightyfilipns.chipmakermc.JsonLoader.PortDirection;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.*;
@@ -34,7 +34,7 @@ public class ObstacleMap
             for (int i = 0; i < hyperGraphNet.pin_port_pos.size(); i++)
             {
                 var pinPortPo = hyperGraphNet.pin_port_pos.get(i);
-                JsonDesign.PortDirection dir = i == hyperGraphNet.out_port_pos ? JsonDesign.PortDirection.Output : JsonDesign.PortDirection.Input;
+                PortDirection dir = i == hyperGraphNet.out_port_pos ? PortDirection.Output : PortDirection.Input;
                 addAll(Misc.MakeObstMapFromPort(pinPortPo, dir));
             }
         }

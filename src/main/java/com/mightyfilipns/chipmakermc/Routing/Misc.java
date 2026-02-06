@@ -1,6 +1,6 @@
 package com.mightyfilipns.chipmakermc.Routing;
 
-import com.mightyfilipns.chipmakermc.JsonLoader.JsonDesign;
+import com.mightyfilipns.chipmakermc.JsonLoader.PortDirection;
 import net.minecraft.util.math.BlockPos;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -24,13 +24,13 @@ public class Misc
         return new BlockPos(p.getLeft(), y , p.getRight());
     }
 
-    public static HashSet<Pair<Integer, Integer>> MakeObstMapFromPort(BlockPos p1, JsonDesign.PortDirection dir)
+    public static HashSet<Pair<Integer, Integer>> MakeObstMapFromPort(BlockPos p1, PortDirection dir)
     {
         var pts1 = GetSurroundingPoints(AsPair(p1));
         HashSet<Pair<Integer, Integer>> ret = new HashSet<>(pts1);
         List<Pair<Integer, Integer>> pts2;
         ret.add(AsPair(p1));
-        if (dir == JsonDesign.PortDirection.Input)
+        if (dir == PortDirection.Input)
         {
             pts2 = GetSurroundingPoints(AsPair(p1.add(1, 0, 0)));
             ret.add(AsPair(p1.add(1, 0, 0)));
@@ -44,13 +44,13 @@ public class Misc
         ret.addAll(pts2);
         return ret;
     }
-    public static HashSet<Pair<Integer, Integer>> MakeObstMapFromPortRemove(BlockPos p1, JsonDesign.PortDirection dir)
+    public static HashSet<Pair<Integer, Integer>> MakeObstMapFromPortRemove(BlockPos p1, PortDirection dir)
     {
         var pts1 = GetSurroundingPoints(AsPair(p1));
         HashSet<Pair<Integer, Integer>> ret = new HashSet<>(pts1);
         List<Pair<Integer, Integer>> pts2;
         ret.add(AsPair(p1));
-        if (dir == JsonDesign.PortDirection.Input)
+        if (dir == PortDirection.Input)
         {
             pts2 = GetSurroundingPoints(AsPair(p1.add(1, 0, 0)));
             ret.add(AsPair(p1.add(1, 0, 0)));
@@ -62,7 +62,7 @@ public class Misc
             pts2.add(Pair.of(p1.getX() - 1, p1.getZ() - 1));
         }
         ret.addAll(pts2);
-        if(dir == JsonDesign.PortDirection.Input)
+        if(dir == PortDirection.Input)
         {
             ret.remove(Pair.of(p1.getX() + 1, p1.getZ()));
         }

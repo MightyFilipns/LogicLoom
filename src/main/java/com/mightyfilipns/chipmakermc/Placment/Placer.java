@@ -2,10 +2,7 @@ package com.mightyfilipns.chipmakermc.Placment;
 
 import Jama.Matrix;
 import com.mightyfilipns.chipmakermc.*;
-import com.mightyfilipns.chipmakermc.JsonLoader.AbstractCell;
-import com.mightyfilipns.chipmakermc.JsonLoader.CellInfo;
-import com.mightyfilipns.chipmakermc.JsonLoader.CellType;
-import com.mightyfilipns.chipmakermc.JsonLoader.JsonDesign;
+import com.mightyfilipns.chipmakermc.JsonLoader.*;
 import com.mightyfilipns.chipmakermc.Misc.VCDHandler;
 import com.mojang.brigadier.context.CommandContext;
 import net.minecraft.block.BlockState;
@@ -257,8 +254,8 @@ public class Placer
                 double euclidean_dist = ((x - x2) * (x - x2)) + ((z - z2) * (z - z2));
                 if(!Double.isNaN(euclidean_dist) && euclidean_dist != 0)
                 {
-                    force_sumx += (1 * (x - x2)) / euclidean_dist;
-                    force_sumz += (1 * (z - z2)) / euclidean_dist;
+                    force_sumx += (CELL_AREA * (x - x2)) / euclidean_dist;
+                    force_sumz += (CELL_AREA * (z - z2)) / euclidean_dist;
                 }
             }
             absmaxx = max(absmaxx, abs(force_sumx));
@@ -411,7 +408,7 @@ public class Placer
 
     private static void SetPortSignAndBlock(ServerWorld w, Map.Entry<String, JsonDesign.DesignPortInfo> value, Integer bit, BlockPos npos)
     {
-        w.setBlockState(npos.add(0, 0, -1), value.getValue().direction == JsonDesign.PortDirection.Input ?  Blocks.LEVER.getDefaultState() : Blocks.REDSTONE_LAMP.getDefaultState());
+        w.setBlockState(npos.add(0, 0, -1), value.getValue().direction == PortDirection.Input ?  Blocks.LEVER.getDefaultState() : Blocks.REDSTONE_LAMP.getDefaultState());
         w.setBlockState(npos.add(1, 0, -1), Blocks.OAK_SIGN.getDefaultState().with(SignBlock.ROTATION, 8));
         ((SignBlockEntity) w.getBlockEntity(npos.add(1, 0, -1))).setText(new SignText().withMessage(1, Text.of(String.format("%s - %d", value.getKey(), bit))), true);
     }
