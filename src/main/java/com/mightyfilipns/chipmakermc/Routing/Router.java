@@ -65,14 +65,6 @@ public class Router
 
         var w = context.getSource().getWorld();
 
-        /*
-        for (Pair<Integer, Integer> integerIntegerPair : obm.GetMapAtY(0).keySet())
-        {
-            //if(!obm.IsFree(integerIntegerPair, 0))
-            w.setBlockState(Misc.AsBlockPos(integerIntegerPair, 0), Blocks.RED_WOOL.getDefaultState());
-        }
-        */
-
         HashSet<Pair<Integer, Integer>> port_map = new HashSet<>();
 
         for (TwoPinNet tp : tpn)

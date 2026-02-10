@@ -96,11 +96,9 @@ public class Placer
         var pos = BlockPosArgumentType.getBlockPos(context, "start_pos");
         var w = context.getSource().getWorld();
 
-        int x_counter = 0;
-
         rel_port_pos = new HashMap<>();
 
-        SetupPorts(mod, x_counter, pos, w, pr, rel_port_pos, c_x, c_z, connection_m);
+        SetupPorts(mod, pos, w, pr, rel_port_pos, c_x, c_z, connection_m);
 
         // TODO: add size for x and z
 
@@ -369,29 +367,28 @@ public class Placer
         return false;
     }
 
-    private static void SetupPorts(JsonDesign.DesignModule mod, int x_counter, BlockPos pos, ServerWorld w, Pair<Matrix, Map<Integer, List<AbstractCell>>> pr, HashMap<Integer, BlockPos> abs_port_pos, Matrix c_x, Matrix c_z, Matrix connection_m)
+    private static void SetupPorts(JsonDesign.DesignModule mod, BlockPos pos, ServerWorld w, Pair<Matrix, Map<Integer, List<AbstractCell>>> pr, HashMap<Integer, BlockPos> abs_port_pos, Matrix c_x, Matrix c_z, Matrix connection_m)
     {
         int z = -1;
+        int x_counter = 0;
         for (Map.Entry<String, JsonDesign.DesignPortInfo> value : mod.ports.entrySet())
         {
-            for (Integer bit : value.getValue().bits)
+            var bit = value.getValue().bits.getFirst();
+            int x = x_counter * 3;
+            int xworldpos = x_counter * PORT_SPACING;
+
+            var npos = pos.add(xworldpos,0,z);
+
+            SetPortSignAndBlock(w, value, bit, npos);
+
+            var conn = pr.getRight().get(bit).stream().mapToInt(a -> a.cell_ID).toArray();
+            abs_port_pos.put(bit, npos);
+            for (int i : conn)
             {
-                int x = x_counter * 3;
-                int xworldpos = x_counter * PORT_SPACING;
-
-                var npos = pos.add(xworldpos,0,z);
-
-                SetPortSignAndBlock(w, value, bit, npos);
-
-                var conn = pr.getRight().get(bit).stream().mapToInt(a -> a.cell_ID).toArray();
-                abs_port_pos.put(bit, npos);
-                for (int i : conn)
-                {
-                    AddFixed(connection_m, c_x, c_z, x , z, i, 1);
-                }
-
-                x_counter += 1;
+                AddFixed(connection_m, c_x, c_z, x , z, i, 1);
             }
+
+            x_counter += 1;
         }
     }
 
@@ -399,6 +396,6 @@ public class Placer
     {
         w.setBlockState(npos.add(0, 0, -1), value.getValue().direction == PortDirection.Input ?  Blocks.LEVER.getDefaultState() : Blocks.REDSTONE_LAMP.getDefaultState());
         w.setBlockState(npos.add(1, 0, -1), Blocks.OAK_SIGN.getDefaultState().with(SignBlock.ROTATION, 8));
-        ((SignBlockEntity) w.getBlockEntity(npos.add(1, 0, -1))).setText(new SignText().withMessage(1, Text.of(String.format("%s - %d", value.getKey(), bit))), true);
+        ((SignBlockEntity) w.getBlockEntity(npos.add(1, 0, -1))).setText(new SignText().withMessage(1, Text.of(value.getKey())), true);
     }
 }
