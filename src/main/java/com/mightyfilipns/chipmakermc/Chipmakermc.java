@@ -73,7 +73,9 @@ public class Chipmakermc implements ModInitializer
                     .then(CommandManager.literal("debug")
                             .then(CommandManager.literal("vcddebug").executes(Chipmakermc::VCDDebug))
                             .then(CommandManager.literal("vcdcomp").executes(Chipmakermc::VCDComp))
-                            .then(CommandManager.literal("check_wires").executes(Chipmakermc::CheckWires)))
+                            .then(CommandManager.literal("check_wires").executes(Chipmakermc::CheckWires))
+                            .then(CommandManager.literal("set_block_pos").then(CommandManager.argument("block_pos", BlockPosArgumentType.blockPos()).executes(Chipmakermc::SetBlockPos)))
+                            .then(CommandManager.literal("show_boundary").executes(Chipmakermc::ShowBoundBox)))
             );
         });
 
@@ -82,7 +84,6 @@ public class Chipmakermc implements ModInitializer
             (SynchronousResourceReloader) manager -> {
                 var dat2 = manager.getResource(Identifier.of("mcchipmaker:flute_data/post9.dat"));
                 var dat1 = manager.getResource(Identifier.of("mcchipmaker:flute_data/powv9.dat"));
-
 
                 try {
                     Misc.SetupFlute(dat1.get().getInputStream(), dat2.get().getInputStream());
@@ -93,6 +94,26 @@ public class Chipmakermc implements ModInitializer
         );
     }
 
+    private static int SetBlockPos(CommandContext<ServerCommandSource> serverCommandSourceCommandContext)
+    {
+        Placer.last_pos = BlockPosArgumentType.getBlockPos(serverCommandSourceCommandContext, "block_pos");
+        return 1;
+    }
+
+    public static int ShowBoundBox(CommandContext<ServerCommandSource> context)
+    {
+        var p = Placer.last_pos.add(0, 10 ,0);
+        for (BlockPos blockPos : BlockPos.iterate(p, p.add(Placer.chip_size, 0, 0)))
+        {
+            context.getSource().getWorld().setBlockState(blockPos, Blocks.BLUE_WOOL.getDefaultState());
+        }
+        for (BlockPos blockPos : BlockPos.iterate(p, p.add(0, 0, Placer.chip_size)))
+        {
+            context.getSource().getWorld().setBlockState(blockPos, Blocks.BLUE_WOOL.getDefaultState());
+        }
+
+        return 1;
+    }
 
     public static int VCDDebug(CommandContext<ServerCommandSource> context)
     {

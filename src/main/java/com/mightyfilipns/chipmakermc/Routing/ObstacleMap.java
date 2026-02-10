@@ -40,6 +40,11 @@ public class ObstacleMap
         }
     }
 
+    public HashMap<Pair<Integer, Integer>, Integer> GetMapAtY(int y)
+    {
+        return map.get(y);
+    }
+
     public int GetMaxY()
     {
         return map.size();

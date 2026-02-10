@@ -26,8 +26,12 @@ public enum CellType implements StringIdentifiable {
     ANDNOT(6, 4 ,5,  GATE_A(0, 3), GATE_B(3, 3),  GATE_Y(0, 0)),
     @SerializedName("$_ORNOT_")
     ORNOT(7, 4 ,4, GATE_A(1, 2), GATE_B(4, 2),  GATE_Y(0, 0)),
+    @SerializedName("$_MUX_")
+    MUX(8, 4 ,8, GATE_A(0, 4), GATE_B(5, 3), MUX_S(4,6),  GATE_Y(0, 0)),
     @SerializedName("$_DFF_P_")
     DFF(6, 4 ,7,  PORT_C(0, 5), PORT_D(3, 5),  PORT_Q(1, 0)),
+    @SerializedName("$_DFFE_PP_")
+    DFFE(8, 4 ,6,  PORT_C(0, 4), PORT_D(2, 3),  PORT_Q(0, 0), PORT_E(5,4)),
     @SerializedName("$_DLATCH_P_")
     DLATCH(5, 4 ,6,  PORT_E(0, 4), PORT_D(2, 3),  PORT_Q(1, 0)),
     ;
@@ -35,6 +39,8 @@ public enum CellType implements StringIdentifiable {
     public static PortInfo GATE_A(int x, int z){ return new PortInfo("A", new BlockPos(x, 0, z), PortDirection.Input); }
     public static PortInfo GATE_B(int x, int z){ return new PortInfo("B", new BlockPos(x, 0, z), PortDirection.Input); }
     public static PortInfo GATE_Y(int x, int z){ return new PortInfo("Y", new BlockPos(x, 0, z), PortDirection.Output); }
+
+    public static PortInfo MUX_S(int x, int z){ return new PortInfo("S", new BlockPos(x, 0, z), PortDirection.Input); }
 
     public static PortInfo PORT_Q(int x, int z){ return new PortInfo("Q", new BlockPos(x, 0, z), PortDirection.Output); }
     public static PortInfo PORT_C(int x, int z){ return new PortInfo("C", new BlockPos(x, 0, z), PortDirection.Input); }
@@ -86,7 +92,9 @@ public enum CellType implements StringIdentifiable {
             case XNOR -> Identifier.of("mcchipmaker", "logic_gate_library/xnor_gate");
             case ANDNOT -> Identifier.of("mcchipmaker", "logic_gate_library/andnot_gate");
             case ORNOT -> Identifier.of("mcchipmaker", "logic_gate_library/ornot_gate");
+            case MUX -> Identifier.of("mcchipmaker", "logic_gate_library/mux_gate");
             case DFF -> Identifier.of("mcchipmaker", "logic_gate_library/dff");
+            case DFFE -> Identifier.of("mcchipmaker", "logic_gate_library/dffe");
             case DLATCH -> Identifier.of("mcchipmaker", "logic_gate_library/dlatch");
             default -> throw new RuntimeException("unknown cell type");
         };

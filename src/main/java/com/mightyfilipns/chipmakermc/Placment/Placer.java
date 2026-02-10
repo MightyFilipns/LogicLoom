@@ -110,7 +110,7 @@ public class Placer
         //AddFixedVirtualCell(connection_m, c_x, c_z,  (int)(chip_size / 1.5D), 0, 1);
         //AddFixedVirtualCell(connection_m, c_x, c_z,  0, (int)(chip_size / 1.5D), 1);
 
-        AddFixedVirtualCell(connection_m, c_x, c_z,  (int)(chip_size / 2), (int)(chip_size / 2), 1);
+        AddFixedVirtualCell(connection_m, c_x, c_z,  (int)(chip_size / 2), (int)(chip_size / 2), 0.5);
 
         Matrix x_sol = null;
         Matrix z_sol = null;

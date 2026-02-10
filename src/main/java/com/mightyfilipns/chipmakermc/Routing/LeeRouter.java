@@ -56,8 +56,13 @@ public class LeeRouter
             }
             else
             {
-                w.setBlockState(start.withY(0), Blocks.BLUE_WOOL.getDefaultState());
-                w.setBlockState(end.withY(0), Blocks.BLUE_WOOL.getDefaultState());
+                for (Pair<Integer, Integer> integerIntegerPair : port_map.GetMapAtY(y).keySet())
+                {
+                    if(!port_map.IsFree(integerIntegerPair, y))
+                        w.setBlockState(Misc.AsBlockPos(integerIntegerPair, 0), Blocks.RED_WOOL.getDefaultState());
+                }
+                w.setBlockState(start.withY(1), Blocks.BLUE_WOOL.getDefaultState());
+                w.setBlockState(end.withY(1), Blocks.BLUE_WOOL.getDefaultState());
                 throw new RuntimeException("DoLeeRouter: empty new mark. Increase the tolerance");
             }
 

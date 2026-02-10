@@ -38,8 +38,8 @@ public class Misc
         else // Output
         {
             pts2 = new ArrayList<>();
-            pts2.add(Pair.of(p1.getX() - 1, p1.getZ() + 1));
-            pts2.add(Pair.of(p1.getX() - 1, p1.getZ() - 1));
+            //pts2.add(Pair.of(p1.getX() - 1, p1.getZ() + 1));
+            //pts2.add(Pair.of(p1.getX() - 1, p1.getZ() - 1));
         }
         ret.addAll(pts2);
         return ret;
@@ -58,8 +58,8 @@ public class Misc
         else // Output
         {
             pts2 = new ArrayList<>();
-            pts2.add(Pair.of(p1.getX() - 1, p1.getZ() + 1));
-            pts2.add(Pair.of(p1.getX() - 1, p1.getZ() - 1));
+            //pts2.add(Pair.of(p1.getX() - 1, p1.getZ() + 1));
+            //pts2.add(Pair.of(p1.getX() - 1, p1.getZ() - 1));
         }
         ret.addAll(pts2);
         if(dir == PortDirection.Input)
@@ -76,6 +76,8 @@ public class Misc
 
     public static void SetupFlute(InputStream in1, InputStream in2)
     {
+        if (Router.flu != null)
+            return;
         Router.flu = new Flute();
         try {
             Router.flu.readLUT(in1, in2);
