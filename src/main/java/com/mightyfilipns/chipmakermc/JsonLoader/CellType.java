@@ -34,6 +34,8 @@ public enum CellType implements StringIdentifiable {
     DFFE(8, 4 ,6,  PORT_C(0, 4), PORT_D(2, 3),  PORT_Q(0, 0), PORT_E(5,4)),
     @SerializedName("$_DLATCH_P_")
     DLATCH(5, 4 ,6,  PORT_E(0, 4), PORT_D(2, 3),  PORT_Q(1, 0)),
+    MUX4(18, 6, 11,GATE_Y(0, 5), MUX_S(13, 1), MUX_T(14, 6), MUX_IN_A(11, 0), MUX_IN_B(8, 0), MUX_IN_C(5, 0), MUX_IN_D(2, 0)),
+
     ;
 
     public static PortInfo GATE_A(int x, int z){ return new PortInfo("A", new BlockPos(x, 0, z), PortDirection.Input); }
@@ -41,6 +43,27 @@ public enum CellType implements StringIdentifiable {
     public static PortInfo GATE_Y(int x, int z){ return new PortInfo("Y", new BlockPos(x, 0, z), PortDirection.Output); }
 
     public static PortInfo MUX_S(int x, int z){ return new PortInfo("S", new BlockPos(x, 0, z), PortDirection.Input); }
+    public static PortInfo MUX_T(int x, int z){ return new PortInfo("T", new BlockPos(x, 0, z), PortDirection.Input); }
+    public static PortInfo MUX_U(int x, int z){ return new PortInfo("T", new BlockPos(x, 0, z), PortDirection.Input); }
+    public static PortInfo MUX_V(int x, int z){ return new PortInfo("T", new BlockPos(x, 0, z), PortDirection.Input); }
+
+    public static PortInfo MUX_IN_A(int x, int z){ return new PortInfo("A", new BlockPos(x, 0, z), PortDirection.Input); }
+    public static PortInfo MUX_IN_B(int x, int z){ return new PortInfo("B", new BlockPos(x, 0, z), PortDirection.Input); }
+    public static PortInfo MUX_IN_C(int x, int z){ return new PortInfo("C", new BlockPos(x, 0, z), PortDirection.Input); }
+    public static PortInfo MUX_IN_D(int x, int z){ return new PortInfo("D", new BlockPos(x, 0, z), PortDirection.Input); }
+    public static PortInfo MUX_IN_E(int x, int z){ return new PortInfo("E", new BlockPos(x, 0, z), PortDirection.Input); }
+    public static PortInfo MUX_IN_F(int x, int z){ return new PortInfo("F", new BlockPos(x, 0, z), PortDirection.Input); }
+    public static PortInfo MUX_IN_G(int x, int z){ return new PortInfo("G", new BlockPos(x, 0, z), PortDirection.Input); }
+    public static PortInfo MUX_IN_H(int x, int z){ return new PortInfo("H", new BlockPos(x, 0, z), PortDirection.Input); }
+    public static PortInfo MUX_IN_I(int x, int z){ return new PortInfo("I", new BlockPos(x, 0, z), PortDirection.Input); }
+    public static PortInfo MUX_IN_J(int x, int z){ return new PortInfo("J", new BlockPos(x, 0, z), PortDirection.Input); }
+    public static PortInfo MUX_IN_K(int x, int z){ return new PortInfo("K", new BlockPos(x, 0, z), PortDirection.Input); }
+    public static PortInfo MUX_IN_L(int x, int z){ return new PortInfo("L", new BlockPos(x, 0, z), PortDirection.Input); }
+    public static PortInfo MUX_IN_M(int x, int z){ return new PortInfo("M", new BlockPos(x, 0, z), PortDirection.Input); }
+    public static PortInfo MUX_IN_N(int x, int z){ return new PortInfo("N", new BlockPos(x, 0, z), PortDirection.Input); }
+    public static PortInfo MUX_IN_O(int x, int z){ return new PortInfo("O", new BlockPos(x, 0, z), PortDirection.Input); }
+    public static PortInfo MUX_IN_P(int x, int z){ return new PortInfo("P", new BlockPos(x, 0, z), PortDirection.Input); }
+
 
     public static PortInfo PORT_Q(int x, int z){ return new PortInfo("Q", new BlockPos(x, 0, z), PortDirection.Output); }
     public static PortInfo PORT_C(int x, int z){ return new PortInfo("C", new BlockPos(x, 0, z), PortDirection.Input); }
