@@ -1,7 +1,10 @@
 package com.mightyfilipns.chipmakermc;
 
+import com.mightyfilipns.chipmakermc.JsonLoader.CellType;
 import com.mightyfilipns.chipmakermc.JsonLoader.JsonDesign;
 import com.mightyfilipns.chipmakermc.JsonLoader.JsonLoadCommand;
+import com.mightyfilipns.chipmakermc.JsonLoader.PortDirection;
+import com.mightyfilipns.chipmakermc.Misc.CellTypeSuggestionProvider;
 import com.mightyfilipns.chipmakermc.Misc.VCDHandler;
 import com.mightyfilipns.chipmakermc.Placment.Placer;
 import com.mightyfilipns.chipmakermc.Routing.Misc;
@@ -13,13 +16,19 @@ import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.resource.v1.ResourceLoader;
 import net.minecraft.block.Blocks;
+import net.minecraft.block.SignBlock;
+import net.minecraft.block.entity.SignBlockEntity;
+import net.minecraft.block.entity.SignText;
 import net.minecraft.command.argument.BlockPosArgumentType;
 import net.minecraft.resource.*;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
+
+import static com.mightyfilipns.chipmakermc.Placment.Placer.placement_data;
 
 public class Chipmakermc implements ModInitializer
 {
@@ -75,6 +84,7 @@ public class Chipmakermc implements ModInitializer
                             .then(CommandManager.literal("vcdcomp").executes(Chipmakermc::VCDComp))
                             .then(CommandManager.literal("check_wires").executes(Chipmakermc::CheckWires))
                             .then(CommandManager.literal("set_block_pos").then(CommandManager.argument("block_pos", BlockPosArgumentType.blockPos()).executes(Chipmakermc::SetBlockPos)))
+                            .then(CommandManager.literal("test_cell_port").then(CommandManager.argument("cell_type", StringArgumentType.word()).suggests(CellTypeSuggestionProvider.Provider()).then(CommandManager.argument("pos", BlockPosArgumentType.blockPos()).executes(Chipmakermc::TestCellPorts))))
                             .then(CommandManager.literal("show_boundary").executes(Chipmakermc::ShowBoundBox)))
             );
         });
@@ -92,6 +102,32 @@ public class Chipmakermc implements ModInitializer
                 }
             }
         );
+    }
+
+    public static int TestCellPorts(CommandContext<ServerCommandSource> context)
+    {
+        var s = StringArgumentType.getString(context, "cell_type");
+        CellType ct = CellType.valueOf(s);
+        BlockPos paste_pos = BlockPosArgumentType.getBlockPos(context, "pos");
+
+        ServerWorld w = context.getSource().getWorld();
+        var t = w.getStructureTemplateManager();
+        var opt = t.getTemplate(ct.getIdentifier());
+        var tmplt = opt.get();
+
+        tmplt.place(w, paste_pos, null, placement_data, null, 3);
+
+        for (CellType.PortInfo port : ct.ports)
+        {
+            var ps = paste_pos.add(port.relpos());
+
+            w.setBlockState(ps, port.dir() == PortDirection.Input ? Blocks.BLUE_WOOL.getDefaultState() : Blocks.RED_WOOL.getDefaultState() );
+
+            w.setBlockState(ps.add(0, 1, 0), Blocks.OAK_SIGN.getDefaultState().with(SignBlock.ROTATION, 8));
+            ((SignBlockEntity) w.getBlockEntity(ps.add(0, 1, 0))).setText(new SignText().withMessage(1, Text.of(port.name())), true);
+        }
+
+        return 1;
     }
 
     private static int SetBlockPos(CommandContext<ServerCommandSource> serverCommandSourceCommandContext)

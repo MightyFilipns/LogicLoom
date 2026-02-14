@@ -57,6 +57,12 @@ public class JsonLoadCommand
             context.getSource().sendFeedback(() -> Text.literal("Failed json parsing\n Error:" + e.getMessage()), false);
            return 0;
         }
+        var invalid_cells =  deg.modules.values().stream().toList().getFirst().cells.values().stream().anyMatch(a -> a.type == null);
+        if (invalid_cells)
+        {
+            context.getSource().sendError(Text.literal("Invalid cells found"));
+            return 0;
+        }
         Chipmakermc.loaded_design = deg;
         return 1;
     }

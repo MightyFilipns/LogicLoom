@@ -29,7 +29,7 @@ import static java.lang.Math.min;
 
 public class Placer
 {
-    public final static int Y_MAX_CELL_SIZE = 4;
+    public final static int Y_MAX_CELL_SIZE = 8;
     public static final int PORT_SPACING = 6;
     public static double force_mul = 0.05D;
     public static int max_iter = 137;
@@ -108,7 +108,9 @@ public class Placer
         //AddFixedVirtualCell(connection_m, c_x, c_z,  (int)(chip_size / 1.5D), 0, 1);
         //AddFixedVirtualCell(connection_m, c_x, c_z,  0, (int)(chip_size / 1.5D), 1);
 
-        AddFixedVirtualCell(connection_m, c_x, c_z,  (int)(chip_size / 2), (int)(chip_size / 2), 0.5);
+        AddFixedVirtualCell(connection_m, c_x, c_z,  (int)0, (int)0, 0.5);
+
+        AddFixedVirtualCell(connection_m, c_x, c_z,  (int)(chip_size / 1), (int)(chip_size / 1), -0.55);
 
         Matrix x_sol = null;
         Matrix z_sol = null;
@@ -135,7 +137,14 @@ public class Placer
                 Legalize(xsa, zsa, cell_list);
                 var d = GetDensity(xsa, zsa, cell_list);
                 int cnt = MarkOverlapPos(d, context, 1);
-                context.getSource().sendFeedback(() -> Text.literal("Max iter reached - " + max_iter + " Overlaps: " + cnt), false);
+                String err;
+                if (obb)
+                    err = "Out of bounds Iter: " + (iter - 1);
+                else
+                    err = "Max iter reached: " + max_iter;
+
+                String finalErr = err;
+                context.getSource().sendFeedback(() -> Text.literal(finalErr + " Overlaps: " + cnt), false);
                 break;
             }
             if(!Arrays.stream(z_sol.getColumnPackedCopy()).allMatch(Double::isFinite))
@@ -159,6 +168,11 @@ public class Placer
 
             iter++;
         } while(has_overlap || obb);
+
+        if(!(iter > max_iter || obb))
+        {
+            context.getSource().sendFeedback(() -> Text.literal("Found valid pos without legalization"), false);
+        }
 
 
         if(do_actual_place)
@@ -315,7 +329,10 @@ public class Placer
             var po = en.getKey();
             for (int i = 1; i < en.getValue() && i < 20; i++)
             {
-                w.setBlockState(posw.add(po.getLeft(), y + i - 1, po.getRight()), Blocks.RED_WOOL.getDefaultState());
+                if(!do_actual_place)
+                {
+                    w.setBlockState(posw.add(po.getLeft(), y + i - 1, po.getRight()), Blocks.RED_WOOL.getDefaultState());
+                }
                 cnt++;
             }
         }

@@ -28,21 +28,11 @@ public class VerticalBuilder
         }
 
         int ry = down.getY() + 2;
-        for (int i = 0; i <= ylevel; i++)
+        for (int i = 0; i <= ylevel + 2; i++)
         {
             w.setBlockState(down.withY(ry + i * 2), Blocks.LIME_WOOL.getDefaultState(), NO_UPDATE);
             w.setBlockState(down.withY(ry + i * 2 + 1), Blocks.REDSTONE_TORCH.getDefaultState());
         }
-
-        /*
-        int ey = ry + ylevel * 2;
-        if ()
-        {
-            w.setBlockState(down.withY(ey), Blocks.LIME_WOOL.getDefaultState(), NO_UPDATE);
-            w.setBlockState(d2.withY(ey), Blocks.REDSTONE_WALL_TORCH.getDefaultState().with(WallRedstoneTorchBlock.FACING, Direction.SOUTH), NO_UPDATE);
-            w.setBlockState(d2.withY(ey + 1),Blocks.LIME_WOOL.getDefaultState(), NO_UPDATE);
-            w.setBlockState(down.withY(ey + 1), Blocks.REDSTONE_WALL_TORCH.getDefaultState().with(WallRedstoneTorchBlock.FACING, Direction.NORTH));
-        }*/
     }
     public static void BuildDownwards(ServerWorld w, BlockPos down, BlockPos upper)
     {

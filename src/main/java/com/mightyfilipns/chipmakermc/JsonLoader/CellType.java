@@ -34,8 +34,13 @@ public enum CellType implements StringIdentifiable {
     DFFE(8, 4 ,6,  PORT_C(0, 4), PORT_D(2, 3),  PORT_Q(0, 0), PORT_E(5,4)),
     @SerializedName("$_DLATCH_P_")
     DLATCH(5, 4 ,6,  PORT_E(0, 4), PORT_D(2, 3),  PORT_Q(1, 0)),
-    MUX4(18, 6, 11,GATE_Y(0, 5), MUX_S(13, 1), MUX_T(14, 6), MUX_IN_A(11, 0), MUX_IN_B(8, 0), MUX_IN_C(5, 0), MUX_IN_D(2, 0)),
-
+    @SerializedName("$_MUX4_")
+    MUX4(18, 6, 11, GATE_Y(1, 5), MUX_S(12, 1), MUX_T(12, 5), MUX_IN_A(9, 1), MUX_IN_B(6, 1), MUX_IN_C(3, 1), MUX_IN_D(0, 1)),
+    @SerializedName("$_MUX8_")
+    MUX8(32, 6, 11, GATE_Y(0, 4), MUX_S(26, 2), MUX_T(28, 6), MUX_U(29, 9), MUX_IN_A(23, 1), MUX_IN_B(20, 1), MUX_IN_C(17, 1), MUX_IN_D(14, 1), MUX_IN_E(11, 1), MUX_IN_F(8, 1), MUX_IN_G(5, 1), MUX_IN_D(2, 1)),
+    @SerializedName("$_MUX16_")
+    MUX16(34, 6, 26, GATE_Y(0, 12), MUX_S(26, 24), MUX_T(29, 24), MUX_U(29, 1), MUX_V(26, 1), MUX_IN_A(23, 1), MUX_IN_B(20, 1), MUX_IN_C(17, 1), MUX_IN_D(14, 1), MUX_IN_E(11, 1), MUX_IN_F(8, 1), MUX_IN_G(5, 1), MUX_IN_H(2, 1),
+            MUX_IN_I(23, 24), MUX_IN_J(20, 24), MUX_IN_K(17, 24), MUX_IN_L(14, 24), MUX_IN_M(11, 24), MUX_IN_N(8, 24), MUX_IN_O(5, 24), MUX_IN_P(2, 24)),
     ;
 
     public static PortInfo GATE_A(int x, int z){ return new PortInfo("A", new BlockPos(x, 0, z), PortDirection.Input); }
@@ -44,8 +49,8 @@ public enum CellType implements StringIdentifiable {
 
     public static PortInfo MUX_S(int x, int z){ return new PortInfo("S", new BlockPos(x, 0, z), PortDirection.Input); }
     public static PortInfo MUX_T(int x, int z){ return new PortInfo("T", new BlockPos(x, 0, z), PortDirection.Input); }
-    public static PortInfo MUX_U(int x, int z){ return new PortInfo("T", new BlockPos(x, 0, z), PortDirection.Input); }
-    public static PortInfo MUX_V(int x, int z){ return new PortInfo("T", new BlockPos(x, 0, z), PortDirection.Input); }
+    public static PortInfo MUX_U(int x, int z){ return new PortInfo("U", new BlockPos(x, 0, z), PortDirection.Input); }
+    public static PortInfo MUX_V(int x, int z){ return new PortInfo("V", new BlockPos(x, 0, z), PortDirection.Input); }
 
     public static PortInfo MUX_IN_A(int x, int z){ return new PortInfo("A", new BlockPos(x, 0, z), PortDirection.Input); }
     public static PortInfo MUX_IN_B(int x, int z){ return new PortInfo("B", new BlockPos(x, 0, z), PortDirection.Input); }
@@ -119,7 +124,10 @@ public enum CellType implements StringIdentifiable {
             case DFF -> Identifier.of("mcchipmaker", "logic_gate_library/dff");
             case DFFE -> Identifier.of("mcchipmaker", "logic_gate_library/dffe");
             case DLATCH -> Identifier.of("mcchipmaker", "logic_gate_library/dlatch");
-            default -> throw new RuntimeException("unknown cell type");
+            case MUX4 -> Identifier.of("mcchipmaker", "logic_gate_library/mux4");
+            case MUX8 -> Identifier.of("mcchipmaker", "logic_gate_library/mux8");
+            case MUX16 -> Identifier.of("mcchipmaker", "logic_gate_library/mux16");
+            default -> throw new RuntimeException("getIdentifier: unknown cell type");
         };
     }
 }
