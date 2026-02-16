@@ -1,14 +1,13 @@
 package com.mightyfilipns.chipmakermc.Routing;
 
-import com.mojang.authlib.minecraft.client.MinecraftClient;
-import net.fabricmc.loader.impl.game.minecraft.MinecraftGameProvider;
 import net.minecraft.block.Blocks;
-import net.minecraft.server.dedicated.MinecraftDedicatedServer;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.*;
+
+import static com.mightyfilipns.chipmakermc.Placment.Placer.LeeRouterMaxSearch;
 
 public class LeeRouter
 {
@@ -32,14 +31,14 @@ public class LeeRouter
         var max = Pair.of(Math.max(start.getX(), end.getX()), Math.max(start.getZ(), end.getZ()));
         var min = Pair.of(Math.min(start.getX(), end.getX()), Math.min(start.getZ(), end.getZ()));
 
-        int tol = 9;
+        int max_search = LeeRouterMaxSearch;
         while(!value_grid.containsKey(endp))
         {
             lastv++;
             List<Pair<Integer, Integer>> new_mark = new ArrayList<>();
             for (Pair<Integer, Integer> lastMarkedPoint : last_marked_points)
             {
-                var pts = GetSurroundingPointsLimited(lastMarkedPoint, max, min, tol);
+                var pts = GetSurroundingPointsLimited(lastMarkedPoint, max, min, max_search);
                 for (Pair<Integer, Integer> pt : pts)
                 {
                     if(!value_grid.containsKey(pt) && port_map.IsFree(pt, y))
@@ -63,7 +62,7 @@ public class LeeRouter
                 }
                 w.setBlockState(start.withY(1), Blocks.BLUE_WOOL.getDefaultState());
                 w.setBlockState(end.withY(1), Blocks.BLUE_WOOL.getDefaultState());
-                throw new RuntimeException("DoLeeRouter: empty new mark. Increase the tolerance");
+                throw new RuntimeException("DoLeeRouter: empty new mark. End point is possibly unreachable, Try increasing the max_search");
             }
 
             if(lastv > 2000)
@@ -79,7 +78,7 @@ public class LeeRouter
         while(last_pos != sp)
         {
             // var res = GetSurroundingPoints(last_pos).stream().filter(value_grid::containsKey);
-            var res = GetSurroundingPointsLimited(last_pos, max, min, tol).stream().filter(value_grid::containsKey);
+            var res = GetSurroundingPointsLimited(last_pos, max, min, max_search).stream().filter(value_grid::containsKey);
             var r1 = res.toList();
             var possible_tiles_v = value_grid.entrySet().stream().filter(a -> r1.contains(a.getKey())).toList();
             var minv = possible_tiles_v.stream().min(Comparator.comparingInt(Map.Entry::getValue)).get().getValue();

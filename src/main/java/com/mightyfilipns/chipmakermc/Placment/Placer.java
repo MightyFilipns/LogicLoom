@@ -4,6 +4,7 @@ import Jama.Matrix;
 import com.mightyfilipns.chipmakermc.*;
 import com.mightyfilipns.chipmakermc.JsonLoader.*;
 import com.mightyfilipns.chipmakermc.Misc.VCDHandler;
+import com.mightyfilipns.chipmakermc.Routing.Misc;
 import com.mojang.brigadier.context.CommandContext;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
@@ -36,13 +37,15 @@ public class Placer
     public static int max_iter = 137;
     public static boolean do_legalization = true;
     public static int chip_size = 400;
-    public static BlockPos start_pos = new BlockPos(74, -12, -189);
+    public static BlockPos start_pos = null;
     public static boolean do_vertical = false;
     public static boolean do_actual_place = true;
     public static HashMap<Integer, BlockPos> rel_port_pos = null;
     public static Map<CellInfo, BlockPos> g_mp = null;
     public static int[] g_xsa = null;
     public static int[] g_zsa = null;
+    public static int LeeRouterMaxSearch = 13;
+
 
     public static final StructurePlacementData placement_data = new StructurePlacementData();
 
@@ -74,6 +77,11 @@ public class Placer
             return 0;
         }
 
+        if(Misc.CheckStartPos(context))
+        {
+            return 0;
+        }
+
         var des = Chipmakermc.loaded_design;
         var mod = (JsonDesign.DesignModule)des.modules.values().toArray()[0];
 
@@ -101,7 +109,7 @@ public class Placer
         var pr = ConnMatrixBuilder.GetConnectivityMatrixHessian();
         Matrix connection_m = pr.getLeft();
 
-        var pos = BlockPosArgumentType.getBlockPos(context, "start_pos");
+        var pos = Placer.start_pos;
         var w = context.getSource().getWorld();
 
         rel_port_pos = new HashMap<>();
@@ -112,13 +120,10 @@ public class Placer
 
         double oldfm = force_const;
 
-        //AddFixedVirtualCell(connection_m, c_x, c_z,  (int)(chip_size / 1.5D), (int)(chip_size / 1.5D), 1);
-        //AddFixedVirtualCell(connection_m, c_x, c_z,  (int)(chip_size / 1.5D), 0, 1);
-        //AddFixedVirtualCell(connection_m, c_x, c_z,  0, (int)(chip_size / 1.5D), 1);
-
-        AddFixedVirtualCell(connection_m, c_x, c_z,  (int)0, (int)0, 0.5);
-
-        AddFixedVirtualCell(connection_m, c_x, c_z,  (int)(chip_size / 1), (int)(chip_size / 1), -0.55);
+        for (FixedPointsManager.FixedPoint fp : FixedPointsManager.GetFixedPointsList())
+        {
+            AddFixedVirtualCell(connection_m, c_x, c_z, fp.x(), fp.z(), fp.strength());
+        }
 
         Matrix x_sol = null;
         Matrix z_sol = null;
@@ -153,7 +158,7 @@ public class Placer
                     err = "Max iter reached: " + max_iter;
 
                 String finalErr = err;
-                context.getSource().sendFeedback(() -> Text.literal(finalErr + " Overlaps: " + cnt), false);
+                context.getSource().sendMessage(Text.of(finalErr + " Overlaps: " + cnt));
                 break;
             }
             if(!Arrays.stream(z_sol.getColumnPackedCopy()).allMatch(Double::isFinite))
@@ -161,15 +166,15 @@ public class Placer
                 throw new RuntimeException("A value in z_sol is not finite");
             }
 
-            xsa = RoundMtxSol(x_sol, 1);
-            zsa = RoundMtxSol(z_sol, 1);
+            xsa = RoundMtxSol(x_sol);
+            zsa = RoundMtxSol(z_sol);
 
             has_overlap = CheckOverlap(xsa, zsa, cell_list);
 
             int finalIter = iter;
-            context.getSource().sendFeedback(() -> Text.literal("Iter: " + finalIter), false);
+            context.getSource().sendMessage(Text.of("Iter: " + finalIter));
 
-            obb = FixOutOfBounds(x_sol, z_sol, f_x, f_z, xsa, zsa);
+            obb = FixOutOfBounds(x_sol, z_sol, f_x, f_z, xsa, zsa, cell_list);
 
             if(has_overlap)
             {
@@ -181,7 +186,7 @@ public class Placer
 
         if(!(iter > max_iter || obb))
         {
-            context.getSource().sendFeedback(() -> Text.literal("Found valid pos without legalization"), false);
+            context.getSource().sendMessage(Text.of("Found valid pos without legalization"));
         }
 
         if(do_actual_place)
@@ -192,7 +197,7 @@ public class Placer
             }
             else
             {
-                context.getSource().sendError(Text.literal("Can not place cell when there is overlap"));
+                context.getSource().sendError(Text.of("Can not place cell when there is overlap"));
             }
         }
         else
@@ -202,7 +207,6 @@ public class Placer
         g_xsa = xsa;
         g_zsa = zsa;
         force_const = oldfm;
-        start_pos = pos;
     }
 
     private static void PlaceCells(int[] xvec, int[] zvec, CommandContext<ServerCommandSource> context, BlockPos pos, List<CellInfo> cell_list, Map<CellInfo, BlockPos> mp)
@@ -235,12 +239,12 @@ public class Placer
 
     private static void PlaceDebug(int[] xvec, int[] zvec, CommandContext<ServerCommandSource> context, int y_offset, List<CellInfo> cell_list)
     {
-        BlockPos pos = BlockPosArgumentType.getBlockPos(context, "start_pos");
+        BlockPos pos = start_pos;
         for (int i = 0; i < xvec.length; i++)
         {
-            int x_offset = ClampVal(xvec[i], chip_size);
-            int z_offset = ClampVal(zvec[i], chip_size);
             CellType ct = cell_list.get(i).type;
+            int x_offset = ClampVal(xvec[i], chip_size - ct.x_size);
+            int z_offset = ClampVal(zvec[i], chip_size - ct.z_size);
             if(x_offset != xvec[i] || z_offset != zvec[i])
             {
                 System.out.println("OBB at Z: " + zvec[i] + " X:" + xvec[i]);
@@ -303,22 +307,23 @@ public class Placer
         force_const *= force_mul;
     }
 
-    private static boolean FixOutOfBounds(Matrix xsol, Matrix zsol, Matrix f_x, Matrix f_z, int[] xsa, int[] zsa)
+    private static boolean FixOutOfBounds(Matrix xsol, Matrix zsol, Matrix f_x, Matrix f_z, int[] xsa, int[] zsa, List<CellInfo> cell_list)
     {
         boolean found = false;
         for (int i = 0; i < xsol.getRowDimension(); i++)
         {
+            var ct = cell_list.get(i).type;
             int xc = xsa[i];
             int zc = zsa[i];
             int redirx = 0;
             int redirz = 0;
             if (xc <= 0)
                 redirx = abs(xc);
-            if (xc > chip_size)
+            if (xc + ct.x_size > chip_size)
                 redirx = xc - chip_size;
             if (zc <= 0)
                 redirz = abs(zc);
-            if (zc > chip_size)
+            if (zc + ct.z_size > chip_size)
                 redirz = zc - chip_size;
 
             double fx = redirx;
@@ -339,7 +344,7 @@ public class Placer
 
     private static int MarkOverlapPos(HashMap<Pair<Integer, Integer>, Integer> pos, CommandContext<ServerCommandSource> context, int y)
     {
-        var posw = BlockPosArgumentType.getBlockPos(context, "start_pos");
+        var posw = start_pos;
         var w = context.getSource().getWorld();
         int cnt = 0;
         for (Map.Entry<Pair<Integer, Integer>, Integer> en : pos.entrySet())

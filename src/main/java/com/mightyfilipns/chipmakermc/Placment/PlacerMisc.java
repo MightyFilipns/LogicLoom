@@ -8,9 +8,9 @@ import static java.lang.Math.round;
 
 public class PlacerMisc
 {
-    static int[] RoundMtxSol(Matrix d, int cell_size)
+    static int[] RoundMtxSol(Matrix d)
     {
-        return Arrays.stream(d.getRowPackedCopy()).mapToInt(a -> (int)round(a * cell_size)).toArray();
+        return Arrays.stream(d.getRowPackedCopy()).mapToInt(a -> (int)round(a)).toArray();
     }
 
     public static void AddAtMatrix(Matrix mtx, int i, int j, int val)

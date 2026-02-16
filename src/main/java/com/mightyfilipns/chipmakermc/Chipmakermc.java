@@ -6,6 +6,7 @@ import com.mightyfilipns.chipmakermc.JsonLoader.JsonLoadCommand;
 import com.mightyfilipns.chipmakermc.JsonLoader.PortDirection;
 import com.mightyfilipns.chipmakermc.Misc.CellTypeSuggestionProvider;
 import com.mightyfilipns.chipmakermc.Misc.VCDHandler;
+import com.mightyfilipns.chipmakermc.Placment.FixedPointsManager;
 import com.mightyfilipns.chipmakermc.Placment.Placer;
 import com.mightyfilipns.chipmakermc.Routing.Misc;
 import com.mightyfilipns.chipmakermc.Routing.Router;
@@ -39,7 +40,7 @@ public class Chipmakermc implements ModInitializer
     {
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
             dispatcher.register(CommandManager.literal("chipmaker").requires(CommandManager.requirePermissionLevel(CommandManager.GAMEMASTERS_CHECK))
-                    .then(CommandManager.literal("load_json").then(CommandManager.argument("file_path" ,StringArgumentType.greedyString()).executes(JsonLoadCommand::LoadJSONDesign)).executes(JsonLoadCommand::LoadJSONDesign))
+                    .then(CommandManager.literal("load_json").then(CommandManager.argument("file_path" ,StringArgumentType.greedyString()).executes(JsonLoadCommand::LoadJSONDesign)))
                     .then(CommandManager.literal("set_start_pos").then(CommandManager.argument("block_pos", BlockPosArgumentType.blockPos()).executes(Chipmakermc::SetBlockPos)))
                     .then(CommandManager.literal("place").executes(Placer::PlaceDesign))
                     .then(CommandManager.literal("param")
@@ -68,15 +69,33 @@ public class Chipmakermc implements ModInitializer
                             .executes(Chipmakermc::GetLegalization)
                             )
                     )
-                    .then(CommandManager.literal("wipe").executes(Chipmakermc::Wipe))
+                    .then(CommandManager.literal("fixed_points")
+                            .then(CommandManager.literal("add_abs")
+                                    .then(CommandManager.argument("position", BlockPosArgumentType.blockPos())
+                                            .then(CommandManager.argument("strength", DoubleArgumentType.doubleArg())
+                                                    .executes(FixedPointsManager::AddPointAbs))))
+                            .then(CommandManager.literal("add_rel")
+                                    .then(CommandManager.argument("x", IntegerArgumentType.integer())
+                                            .then(CommandManager.argument("z", IntegerArgumentType.integer())
+                                                    .then(CommandManager.argument("strength", DoubleArgumentType.doubleArg())
+                                                            .executes(FixedPointsManager::AddPointRel)))))
+                            .then(CommandManager.literal("remove")
+                                    .then(CommandManager.argument("index", IntegerArgumentType.integer(0))
+                                            .executes(FixedPointsManager::RemovePoint)))
+                            .then(CommandManager.literal("list").executes(FixedPointsManager::ListPoints))
+                            .then(CommandManager.literal("clear").executes(FixedPointsManager::ClearAllPoints))
+                    )
+                    .then(CommandManager.literal("misc")
+                            .then(CommandManager.literal("check_wires").executes(Chipmakermc::CheckWires))
+                            .then(CommandManager.literal("show_boundary").executes(Chipmakermc::ShowBoundBox))
+                            .then(CommandManager.literal("wipe").executes(Chipmakermc::Wipe))
+                    )
                     .then(CommandManager.literal("route").executes(Router::DoRouting))
                     .then(CommandManager.literal("debug")
                             .then(CommandManager.literal("place_cache").executes(Placer::PlaceCache))
                             .then(CommandManager.literal("vcddebug").executes(Chipmakermc::VCDDebug))
                             .then(CommandManager.literal("vcdcomp").executes(Chipmakermc::VCDComp))
-                            .then(CommandManager.literal("check_wires").executes(Chipmakermc::CheckWires))
                             .then(CommandManager.literal("test_cell_port").then(CommandManager.argument("cell_type", StringArgumentType.word()).suggests(CellTypeSuggestionProvider.Provider()).then(CommandManager.argument("pos", BlockPosArgumentType.blockPos()).executes(Chipmakermc::TestCellPorts))))
-                            .then(CommandManager.literal("show_boundary").executes(Chipmakermc::ShowBoundBox))
                             .then(CommandManager.literal("test_tree").then(CommandManager.argument("start_pos", BlockPosArgumentType.blockPos()).executes(TestCmds::TestTree)))
                             .then(CommandManager.literal("test_hyper").then(CommandManager.argument("start_pos", BlockPosArgumentType.blockPos()).executes(TestCmds::TestHyperGraph)))
                             .then(CommandManager.literal("test_lee_router").executes(TestCmds::TestLeeRouter))
@@ -129,14 +148,20 @@ public class Chipmakermc implements ModInitializer
         return 1;
     }
 
-    private static int SetBlockPos(CommandContext<ServerCommandSource> serverCommandSourceCommandContext)
+    private static int SetBlockPos(CommandContext<ServerCommandSource> context)
     {
-        Placer.start_pos = BlockPosArgumentType.getBlockPos(serverCommandSourceCommandContext, "block_pos");
+        Placer.start_pos = BlockPosArgumentType.getBlockPos(context, "block_pos");
+        context.getSource().sendMessage(Text.literal("Start pos set to " + Placer.start_pos));
         return 1;
     }
 
     public static int ShowBoundBox(CommandContext<ServerCommandSource> context)
     {
+        if (Misc.CheckStartPos(context))
+        {
+            return 0;
+        }
+
         var p = Placer.start_pos.add(0, 10 ,0);
         for (BlockPos blockPos : BlockPos.iterate(p, p.add(Placer.chip_size, 0, 0)))
         {
@@ -162,11 +187,26 @@ public class Chipmakermc implements ModInitializer
     }
     public static int CheckWires(CommandContext<ServerCommandSource> context)
     {
-        VCDHandler.CheckWires(context.getSource().getWorld());
+        if(Router.cached_hy == null || Router.cached_tpn == null)
+        {
+            context.getSource().sendError(Text.literal("You must place wires using /chipmaker route before using this command"));
+            return 0;
+        }
+        if (Misc.CheckStartPos(context))
+        {
+            return 0;
+        }
+
+        VCDHandler.CheckWires(context);
         return 1;
     }
     public static int Wipe(CommandContext<ServerCommandSource> context)
     {
+        if(Misc.CheckStartPos(context))
+        {
+            return 0;
+        }
+
         int maxx = Placer.chip_size;
         int maxz = Placer.chip_size;
         int maxy = 0;
@@ -200,78 +240,78 @@ public class Chipmakermc implements ModInitializer
 
     static int GetLegalization(CommandContext<ServerCommandSource> context)
     {
-        context.getSource().sendFeedback(() -> Text.literal("Do legalization - " + Placer.do_legalization), false);
+        context.getSource().sendMessage(Text.literal("Do legalization - " + Placer.do_legalization));
         return 1;
     }
 
     static int SetLegalization(CommandContext<ServerCommandSource> context)
     {
         Placer.do_legalization = BoolArgumentType.getBool(context, "do_legalization");
-        context.getSource().sendFeedback(() -> Text.literal("Do legalization is now: " + Placer.do_legalization), false);
+        context.getSource().sendMessage(Text.literal("Do legalization is now: " + Placer.do_legalization));
         return 1;
     }
 
     static int GetMaxIter(CommandContext<ServerCommandSource> context)
     {
-        context.getSource().sendFeedback(() -> Text.literal("Max iter - " + Placer.max_iter), false);
+        context.getSource().sendMessage(Text.literal("Max iter - " + Placer.max_iter));
         return 1;
     }
 
     static int SetMaxIter(CommandContext<ServerCommandSource> context)
     {
         Placer.max_iter = IntegerArgumentType.getInteger(context, "max_iter");
-        context.getSource().sendFeedback(() -> Text.literal("Max iter is now: " + Placer.max_iter), false);
+        context.getSource().sendMessage(Text.literal("Max iter is now: " + Placer.max_iter));
         return 1;
     }
 
     static int GetForceMul(CommandContext<ServerCommandSource> context)
     {
-        context.getSource().sendFeedback(() -> Text.literal("Force mul - " + Placer.force_mul), false);
+        context.getSource().sendMessage(Text.literal("Force mul - " + Placer.force_mul));
         return 1;
     }
 
     static int SetForceMul(CommandContext<ServerCommandSource> context)
     {
         Placer.force_mul = DoubleArgumentType.getDouble(context, "force_mul");
-        context.getSource().sendFeedback(() -> Text.literal("Force mul is now: " + Placer.force_mul), false);
+        context.getSource().sendMessage(Text.literal("Force mul is now: " + Placer.force_mul));
         return 1;
     }
 
     static int GetForceConst(CommandContext<ServerCommandSource> context)
     {
-        context.getSource().sendFeedback(() -> Text.literal("Force const - " + Placer.force_const), false);
+        context.getSource().sendMessage(Text.literal("Force const - " + Placer.force_const));
         return 1;
     }
 
     static int SetForceConst(CommandContext<ServerCommandSource> context)
     {
         Placer.force_const = DoubleArgumentType.getDouble(context, "force_const");
-        context.getSource().sendFeedback(() -> Text.literal("Force const is now: " + Placer.force_const), false);
+        context.getSource().sendMessage(Text.literal("Force const is now: " + Placer.force_const));
         return 1;
     }
 
     static int GetChipSize(CommandContext<ServerCommandSource> context)
     {
-        context.getSource().sendFeedback(() -> Text.literal("Chip size - " + Placer.chip_size), false);
+        context.getSource().sendMessage(Text.literal("Chip size - " + Placer.chip_size));
         return 1;
     }
     static int SetChipSize(CommandContext<ServerCommandSource> context)
     {
         Placer.chip_size = IntegerArgumentType.getInteger(context, "chip_size");
-        context.getSource().sendFeedback(() -> Text.literal("Chip size is now: " + Placer.chip_size), false);
+        context.getSource().sendMessage(Text.literal("Chip size is now: " + Placer.chip_size));
         return 1;
     }
 
     static int GetActualPlace(CommandContext<ServerCommandSource> context)
     {
-        context.getSource().sendFeedback(() -> Text.literal("Do actual place - " + Placer.do_actual_place), false);
+        context.getSource().sendMessage(Text.literal("Do actual place - " + Placer.do_actual_place));
         return 1;
     }
 
     static int SetActualPlace(CommandContext<ServerCommandSource> context)
     {
         Placer.do_actual_place = BoolArgumentType.getBool(context, "do_actual_place");
-        context.getSource().sendFeedback(() -> Text.literal("Do actual place is now: " + Placer.do_actual_place), false);
+        context.getSource().sendMessage(Text.literal("Do actual place is now: " + Placer.do_actual_place));
         return 1;
     }
 }

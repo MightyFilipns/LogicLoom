@@ -6,9 +6,12 @@ import com.mightyfilipns.chipmakermc.Placment.Placer;
 import com.mightyfilipns.chipmakermc.Routing.HyperGraphNet;
 import com.mightyfilipns.chipmakermc.Routing.Router;
 import com.mightyfilipns.chipmakermc.Routing.TwoPinNet;
+import com.mojang.brigadier.context.CommandContext;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.RedstoneWireBlock;
+import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
 
 import java.io.*;
@@ -59,8 +62,9 @@ public class VCDHandler
         }
     }
 
-    public static void CheckWires(ServerWorld w)
+    public static void CheckWires(CommandContext<ServerCommandSource> context)
     {
+        var w = context.getSource().getWorld();
         boolean found = false;
         for (HyperGraphNet hp : Router.cached_hy)
         {
@@ -73,7 +77,7 @@ public class VCDHandler
                 if (pointpwr != outpwr)
                 {
                     found = true;
-                    System.out.printf("Bad wire Power out: %s, %s Power in: %s, %s%n", outpos, outpwr, inpos, pointpwr);
+                    context.getSource().sendError(Text.literal(String.format("BW: PwrOut: %s %s PwrIn: %s %s", XZ_tostring(outpos), outpwr, XZ_tostring(inpos), pointpwr)));
                 }
             }
         }
@@ -87,13 +91,18 @@ public class VCDHandler
             if (pwr1 != pwr2)
             {
                 found = true;
-                System.out.printf("Bad wire Power out: %s, %s Power in: %s, %s%n", outpos, pwr1, inpos, pwr2);
+                context.getSource().sendError(Text.literal(String.format("BW: PwrOut: %s %s PwrIn: %s %s", XZ_tostring(outpos), pwr1, XZ_tostring(inpos), pwr2)));
             }
         }
         if (!found)
         {
-            System.out.println("No bad wires found");
+            context.getSource().sendError(Text.literal("No bad wires found"));
         }
+    }
+
+    public static String XZ_tostring(BlockPos p)
+    {
+        return String.format("X: %d Z: %d", p.getX(), p.getZ());
     }
 
     private static boolean CheckPower(ServerWorld w, BlockPos outpos)

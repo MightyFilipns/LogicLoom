@@ -29,16 +29,22 @@ public class Router
 
     public static int DoRouting(CommandContext<ServerCommandSource> context)
     {
-        var des = Chipmakermc.loaded_design;
-        var mod = (JsonDesign.DesignModule)des.modules.values().toArray()[0];
         var cellmap = Placer.g_mp;
         var port_rel_pos = Placer.rel_port_pos;
 
-        if(cellmap == null || port_rel_pos == null)
+        if(cellmap == null || port_rel_pos == null || cellmap.isEmpty())
         {
             context.getSource().sendError(Text.literal("Place a design first with /chipmaker place"));
             return 0;
         }
+
+        if(Misc.CheckStartPos(context))
+        {
+            return 0;
+        }
+
+        var des = Chipmakermc.loaded_design;
+        var mod = (JsonDesign.DesignModule)des.modules.values().toArray()[0];
 
         Map<Integer, List<AbstractCell>> dd = new HashMap<>();
 
@@ -65,7 +71,7 @@ public class Router
             });
         }
 
-        BlockPos pos = BlockPosArgumentType.getBlockPos(context, "start_pos");
+        BlockPos pos = Placer.start_pos;
 
         List<Map.Entry<Integer, List<AbstractCell>>> hypergraph = dd.entrySet().stream().filter(a -> a.getValue().size() > 2).toList();
         List<Map.Entry<Integer, List<AbstractCell>>> twopin = dd.entrySet().stream().filter(a -> a.getValue().size() <= 2).toList();

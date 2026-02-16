@@ -1,6 +1,10 @@
 package com.mightyfilipns.chipmakermc.Routing;
 
 import com.mightyfilipns.chipmakermc.JsonLoader.PortDirection;
+import com.mightyfilipns.chipmakermc.Placment.Placer;
+import com.mojang.brigadier.context.CommandContext;
+import net.minecraft.server.command.ServerCommandSource;
+import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -50,6 +54,16 @@ public class Misc
             ret.remove(Pair.of(p1.getX() + 1, p1.getZ()));
         }
         return ret;
+    }
+
+    public static boolean CheckStartPos(CommandContext<ServerCommandSource> context)
+    {
+        if(Placer.start_pos == null)
+        {
+            context.getSource().sendError(Text.literal("You must set the start_pos using /chipmaker set_start_pos before using this command"));
+            return true;
+        }
+        return false;
     }
 
     static boolean AxisDiffer(BlockPos p1, BlockPos p2)
