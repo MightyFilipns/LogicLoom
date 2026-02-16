@@ -31,10 +31,12 @@ public class Placer
 {
     public final static int Y_MAX_CELL_SIZE = 8;
     public static final int PORT_SPACING = 6;
-    public static double force_mul = 0.05D;
+    public static double force_const = 0.05D;
+    public static double force_mul = 1.047D;
     public static int max_iter = 137;
+    public static boolean do_legalization = true;
     public static int chip_size = 400;
-    public static BlockPos last_pos = new BlockPos(74, -12, -189);
+    public static BlockPos start_pos = new BlockPos(74, -12, -189);
     public static boolean do_vertical = false;
     public static boolean do_actual_place = true;
     public static HashMap<Integer, BlockPos> rel_port_pos = null;
@@ -66,6 +68,12 @@ public class Placer
 
     public static int PlaceDesign(CommandContext<ServerCommandSource> context)
     {
+        if (Chipmakermc.loaded_design == null)
+        {
+            context.getSource().sendError(Text.literal("Load a design first with /chipmaker load_json"));
+            return 0;
+        }
+
         var des = Chipmakermc.loaded_design;
         var mod = (JsonDesign.DesignModule)des.modules.values().toArray()[0];
 
@@ -90,7 +98,7 @@ public class Placer
         Matrix c_x = new Matrix(mod.cells.size(), 1);
         Matrix c_z = new Matrix(mod.cells.size(), 1);
 
-        var pr = ConnMatrixBuilder.GetConnectivityMatrixHessian3();
+        var pr = ConnMatrixBuilder.GetConnectivityMatrixHessian();
         Matrix connection_m = pr.getLeft();
 
         var pos = BlockPosArgumentType.getBlockPos(context, "start_pos");
@@ -102,7 +110,7 @@ public class Placer
 
         // TODO: add size for x and z
 
-        double oldfm = force_mul;
+        double oldfm = force_const;
 
         //AddFixedVirtualCell(connection_m, c_x, c_z,  (int)(chip_size / 1.5D), (int)(chip_size / 1.5D), 1);
         //AddFixedVirtualCell(connection_m, c_x, c_z,  (int)(chip_size / 1.5D), 0, 1);
@@ -134,7 +142,8 @@ public class Placer
             // Sanity check
             if(iter > max_iter || obb)
             {
-                Legalize(xsa, zsa, cell_list);
+                if(do_legalization)
+                    Legalize(xsa, zsa, cell_list);
                 var d = GetDensity(xsa, zsa, cell_list);
                 int cnt = MarkOverlapPos(d, context, 1);
                 String err;
@@ -149,7 +158,7 @@ public class Placer
             }
             if(!Arrays.stream(z_sol.getColumnPackedCopy()).allMatch(Double::isFinite))
             {
-                throw new RuntimeException("Err");
+                throw new RuntimeException("A value in z_sol is not finite");
             }
 
             xsa = RoundMtxSol(x_sol, 1);
@@ -157,7 +166,8 @@ public class Placer
 
             has_overlap = CheckOverlap(xsa, zsa, cell_list);
 
-            System.out.println("Iter: " + iter);
+            int finalIter = iter;
+            context.getSource().sendFeedback(() -> Text.literal("Iter: " + finalIter), false);
 
             obb = FixOutOfBounds(x_sol, z_sol, f_x, f_z, xsa, zsa);
 
@@ -174,17 +184,25 @@ public class Placer
             context.getSource().sendFeedback(() -> Text.literal("Found valid pos without legalization"), false);
         }
 
-
         if(do_actual_place)
-            PlaceCells(xsa, zsa, context, pos, cell_list, mp);
+        {
+            if(!CheckOverlap(xsa, zsa, cell_list))
+            {
+                PlaceCells(xsa, zsa, context, pos, cell_list, mp);
+            }
+            else
+            {
+                context.getSource().sendError(Text.literal("Can not place cell when there is overlap"));
+            }
+        }
         else
             PlaceDebug(xsa, zsa, context, 0, cell_list);
 
         g_mp = mp;
         g_xsa = xsa;
         g_zsa = zsa;
-        force_mul = oldfm;
-        last_pos = pos;
+        force_const = oldfm;
+        start_pos = pos;
     }
 
     private static void PlaceCells(int[] xvec, int[] zvec, CommandContext<ServerCommandSource> context, BlockPos pos, List<CellInfo> cell_list, Map<CellInfo, BlockPos> mp)
@@ -278,11 +296,11 @@ public class Placer
             nfx.set(i, 0, force_sumx);
             nfz.set(i, 0, force_sumz);
         }
-        var norx = nfx.times(1/absmaxx).times(force_mul);
-        var norz = nfz.times(1/absmaxz).times(force_mul);
+        var norx = nfx.times(1/absmaxx).times(force_const);
+        var norz = nfz.times(1/absmaxz).times(force_const);
         f_x.plusEquals(norx);
         f_z.plusEquals(norz);
-        force_mul *= 1.047;
+        force_const *= force_mul;
     }
 
     private static boolean FixOutOfBounds(Matrix xsol, Matrix zsol, Matrix f_x, Matrix f_z, int[] xsa, int[] zsa)

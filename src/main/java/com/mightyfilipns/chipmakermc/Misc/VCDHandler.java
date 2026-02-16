@@ -32,14 +32,14 @@ public class VCDHandler
         netid_toout_pos = new HashMap<>();
         for (HyperGraphNet hyperGraphNet : Router.cached_hy)
         {
-            var outpos = hyperGraphNet.all_points.get(hyperGraphNet.allpoints_pos).withY(Placer.last_pos.getY());
+            var outpos = hyperGraphNet.all_points.get(hyperGraphNet.allpoints_pos).withY(Placer.start_pos.getY());
             var isext = w.isReceivingRedstonePower(outpos);
             valuemap.put(id_netname.get(hyperGraphNet.net_id), isext);
             netid_toout_pos.put(hyperGraphNet.net_id, outpos);
         }
         for (TwoPinNet tpn : Router.cached_tpn)
         {
-            var outpos = tpn.p1dir == PortDirection.Output ? tpn.p1.withY(Placer.last_pos.getY()) : tpn.p2.withY(Placer.last_pos.getY());
+            var outpos = tpn.p1dir == PortDirection.Output ? tpn.p1.withY(Placer.start_pos.getY()) : tpn.p2.withY(Placer.start_pos.getY());
             var isext = w.isReceivingRedstonePower(outpos);
             valuemap.put(id_netname.get(tpn.id), isext);
             netid_toout_pos.put(tpn.id, outpos);
@@ -64,11 +64,11 @@ public class VCDHandler
         boolean found = false;
         for (HyperGraphNet hp : Router.cached_hy)
         {
-            var outpos = hp.all_points.get(hp.allpoints_pos).withY(Placer.last_pos.getY());
+            var outpos = hp.all_points.get(hp.allpoints_pos).withY(Placer.start_pos.getY());
             var outpwr = CheckPower(w, outpos);
             for (BlockPos allPoint : hp.pin_port_pos)
             {
-                BlockPos inpos = allPoint.withY(Placer.last_pos.getY());
+                BlockPos inpos = allPoint.withY(Placer.start_pos.getY());
                 var pointpwr = CheckPower(w, inpos);
                 if (pointpwr != outpwr)
                 {
@@ -81,8 +81,8 @@ public class VCDHandler
         {
             var outpos = hp.p1dir == PortDirection.Output ? hp.p1 : hp.p2;
             var inpos = hp.p1dir == PortDirection.Output ? hp.p2 : hp.p1;
-            var pwr1 = CheckPower(w, outpos.withY(Placer.last_pos.getY()));
-            var pwr2 = CheckPower(w, inpos.withY(Placer.last_pos.getY()));
+            var pwr1 = CheckPower(w, outpos.withY(Placer.start_pos.getY()));
+            var pwr2 = CheckPower(w, inpos.withY(Placer.start_pos.getY()));
 
             if (pwr1 != pwr2)
             {

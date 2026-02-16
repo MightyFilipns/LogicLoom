@@ -40,18 +40,20 @@ public class Chipmakermc implements ModInitializer
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
             dispatcher.register(CommandManager.literal("chipmaker").requires(CommandManager.requirePermissionLevel(CommandManager.GAMEMASTERS_CHECK))
                     .then(CommandManager.literal("load_json").then(CommandManager.argument("file_path" ,StringArgumentType.greedyString()).executes(JsonLoadCommand::LoadJSONDesign)).executes(JsonLoadCommand::LoadJSONDesign))
-                    .then(CommandManager.literal("place")
-                            .then(CommandManager.argument("start_pos", BlockPosArgumentType.blockPos()).executes(Placer::PlaceDesign)))
-                    .then(CommandManager.literal("place_cache")
-                            .then(CommandManager.argument("start_pos", BlockPosArgumentType.blockPos()).executes(Placer::PlaceCache)))
+                    .then(CommandManager.literal("set_start_pos").then(CommandManager.argument("block_pos", BlockPosArgumentType.blockPos()).executes(Chipmakermc::SetBlockPos)))
+                    .then(CommandManager.literal("place").executes(Placer::PlaceDesign))
                     .then(CommandManager.literal("param")
                             .then(CommandManager.literal("max_iter")
                                             .then(CommandManager.argument("max_iter", IntegerArgumentType.integer(0, 10_000)).executes(Chipmakermc::SetMaxIter))
                             .executes(Chipmakermc::GetMaxIter)
                             )
+                            .then(CommandManager.literal("force_const")
+                                            .then(CommandManager.argument("force_const", DoubleArgumentType.doubleArg()).executes(Chipmakermc::SetForceConst))
+                            .executes(Chipmakermc::GetForceConst)
+                            )
                             .then(CommandManager.literal("force_mul")
-                                            .then(CommandManager.argument("force_mul", DoubleArgumentType.doubleArg()).executes(Chipmakermc::SetForceMul))
-                            .executes(Chipmakermc::GetForceMul)
+                                    .then(CommandManager.argument("force_mul", DoubleArgumentType.doubleArg()).executes(Chipmakermc::SetForceMul))
+                                    .executes(Chipmakermc::GetForceMul)
                             )
                             .then(CommandManager.literal("chip_size")
                                     .then(CommandManager.argument("chip_size", IntegerArgumentType.integer(0, 10_000)).executes(Chipmakermc::SetChipSize))
@@ -61,31 +63,28 @@ public class Chipmakermc implements ModInitializer
                                     .then(CommandManager.argument("do_actual_place", BoolArgumentType.bool()).executes(Chipmakermc::SetActualPlace))
                             .executes(Chipmakermc::GetActualPlace)
                             )
+                            .then(CommandManager.literal("do_legalization")
+                                    .then(CommandManager.argument("do_legalization", BoolArgumentType.bool()).executes(Chipmakermc::SetLegalization))
+                            .executes(Chipmakermc::GetLegalization)
+                            )
                     )
                     .then(CommandManager.literal("wipe").executes(Chipmakermc::Wipe))
-                    .then(CommandManager.literal("route")
+                    .then(CommandManager.literal("route").executes(Router::DoRouting))
+                    .then(CommandManager.literal("debug")
+                            .then(CommandManager.literal("place_cache").executes(Placer::PlaceCache))
+                            .then(CommandManager.literal("vcddebug").executes(Chipmakermc::VCDDebug))
+                            .then(CommandManager.literal("vcdcomp").executes(Chipmakermc::VCDComp))
+                            .then(CommandManager.literal("check_wires").executes(Chipmakermc::CheckWires))
+                            .then(CommandManager.literal("test_cell_port").then(CommandManager.argument("cell_type", StringArgumentType.word()).suggests(CellTypeSuggestionProvider.Provider()).then(CommandManager.argument("pos", BlockPosArgumentType.blockPos()).executes(Chipmakermc::TestCellPorts))))
+                            .then(CommandManager.literal("show_boundary").executes(Chipmakermc::ShowBoundBox))
                             .then(CommandManager.literal("test_tree").then(CommandManager.argument("start_pos", BlockPosArgumentType.blockPos()).executes(TestCmds::TestTree)))
                             .then(CommandManager.literal("test_hyper").then(CommandManager.argument("start_pos", BlockPosArgumentType.blockPos()).executes(TestCmds::TestHyperGraph)))
                             .then(CommandManager.literal("test_lee_router").executes(TestCmds::TestLeeRouter))
                             .then(CommandManager.literal("rebuild_cached").executes(TestCmds::RebuildCached))
-                            .then(CommandManager.literal("test_vert")
-                                    .then(CommandManager.argument("up", BlockPosArgumentType.blockPos())
-                                    .then(CommandManager.argument("down", BlockPosArgumentType.blockPos())
-                                    .executes(TestCmds::TestVerticalBuilder))))
-                            .then(CommandManager.literal("test_wire")
-                                    .then(CommandManager.argument("index", IntegerArgumentType.integer(0))
-                                    .executes(TestCmds::BuildWire)))
-                            .then(CommandManager.literal("test_template")
-                                    .then(CommandManager.argument("pos", BlockPosArgumentType.blockPos())
-                                    .executes(TestCmds::TestTemplate)))
+                            .then(CommandManager.literal("test_vert").then(CommandManager.argument("up", BlockPosArgumentType.blockPos()).then(CommandManager.argument("down", BlockPosArgumentType.blockPos()).executes(TestCmds::TestVerticalBuilder))))
+                            .then(CommandManager.literal("test_wire").then(CommandManager.argument("index", IntegerArgumentType.integer(0)).executes(TestCmds::BuildWire)))
+                            .then(CommandManager.literal("test_template").then(CommandManager.argument("pos", BlockPosArgumentType.blockPos()).executes(TestCmds::TestTemplate)))
                     )
-                    .then(CommandManager.literal("debug")
-                            .then(CommandManager.literal("vcddebug").executes(Chipmakermc::VCDDebug))
-                            .then(CommandManager.literal("vcdcomp").executes(Chipmakermc::VCDComp))
-                            .then(CommandManager.literal("check_wires").executes(Chipmakermc::CheckWires))
-                            .then(CommandManager.literal("set_block_pos").then(CommandManager.argument("block_pos", BlockPosArgumentType.blockPos()).executes(Chipmakermc::SetBlockPos)))
-                            .then(CommandManager.literal("test_cell_port").then(CommandManager.argument("cell_type", StringArgumentType.word()).suggests(CellTypeSuggestionProvider.Provider()).then(CommandManager.argument("pos", BlockPosArgumentType.blockPos()).executes(Chipmakermc::TestCellPorts))))
-                            .then(CommandManager.literal("show_boundary").executes(Chipmakermc::ShowBoundBox)))
             );
         });
 
@@ -132,13 +131,13 @@ public class Chipmakermc implements ModInitializer
 
     private static int SetBlockPos(CommandContext<ServerCommandSource> serverCommandSourceCommandContext)
     {
-        Placer.last_pos = BlockPosArgumentType.getBlockPos(serverCommandSourceCommandContext, "block_pos");
+        Placer.start_pos = BlockPosArgumentType.getBlockPos(serverCommandSourceCommandContext, "block_pos");
         return 1;
     }
 
     public static int ShowBoundBox(CommandContext<ServerCommandSource> context)
     {
-        var p = Placer.last_pos.add(0, 10 ,0);
+        var p = Placer.start_pos.add(0, 10 ,0);
         for (BlockPos blockPos : BlockPos.iterate(p, p.add(Placer.chip_size, 0, 0)))
         {
             context.getSource().getWorld().setBlockState(blockPos, Blocks.BLUE_WOOL.getDefaultState());
@@ -180,7 +179,7 @@ public class Chipmakermc implements ModInitializer
         {
             if(Router.max_y != 0)
             {
-                maxy = Router.max_y - Placer.last_pos.getY();
+                maxy = Router.max_y - Placer.start_pos.getY();
             }
             else
             {
@@ -192,10 +191,23 @@ public class Chipmakermc implements ModInitializer
             maxy = 20;
         }
 
-        for (BlockPos blockPos : BlockPos.iterate(Placer.last_pos.add(maxx, maxy, maxz), Placer.last_pos.add(0, 0, -2)))
+        for (BlockPos blockPos : BlockPos.iterate(Placer.start_pos.add(maxx, maxy, maxz), Placer.start_pos.add(0, 0, -2)))
         {
             context.getSource().getWorld().setBlockState(blockPos, Blocks.AIR.getDefaultState(), 2 | 816);
         }
+        return 1;
+    }
+
+    static int GetLegalization(CommandContext<ServerCommandSource> context)
+    {
+        context.getSource().sendFeedback(() -> Text.literal("Do legalization - " + Placer.do_legalization), false);
+        return 1;
+    }
+
+    static int SetLegalization(CommandContext<ServerCommandSource> context)
+    {
+        Placer.do_legalization = BoolArgumentType.getBool(context, "do_legalization");
+        context.getSource().sendFeedback(() -> Text.literal("Do legalization is now: " + Placer.do_legalization), false);
         return 1;
     }
 
@@ -222,6 +234,19 @@ public class Chipmakermc implements ModInitializer
     {
         Placer.force_mul = DoubleArgumentType.getDouble(context, "force_mul");
         context.getSource().sendFeedback(() -> Text.literal("Force mul is now: " + Placer.force_mul), false);
+        return 1;
+    }
+
+    static int GetForceConst(CommandContext<ServerCommandSource> context)
+    {
+        context.getSource().sendFeedback(() -> Text.literal("Force const - " + Placer.force_const), false);
+        return 1;
+    }
+
+    static int SetForceConst(CommandContext<ServerCommandSource> context)
+    {
+        Placer.force_const = DoubleArgumentType.getDouble(context, "force_const");
+        context.getSource().sendFeedback(() -> Text.literal("Force const is now: " + Placer.force_const), false);
         return 1;
     }
 

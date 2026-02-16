@@ -190,23 +190,6 @@ public class RedstoneWireBuilder
                         ConnBranches(new_adj, i1, i2);
                     }
                 }
-
-                /*
-                if(g.size() == 3)
-                {
-                    int mi = FindIndex(h, g, 1);
-                    if(CheckConn(i, h, mi))
-                    {
-                        ConnBranches(new_adj, mi, integer);
-                    }
-                    else
-                    {
-                        ConnBranches(new_adj, i, mi);
-                    }
-                }
-                else
-                    throw new RuntimeException("FixHypergraphAdjList_DFS: unhandled case");*/
-                // FIX
             }
             FixHypergraphAdjList_DFS(integer, h, visited, new_adj);
         }

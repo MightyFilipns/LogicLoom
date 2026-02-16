@@ -1,8 +1,6 @@
 package com.mightyfilipns.chipmakermc.Routing;
 
-import com.mightyfilipns.chipmakermc.Chipmakermc;
 import com.mightyfilipns.chipmakermc.JsonLoader.CellType;
-import com.mightyfilipns.chipmakermc.JsonLoader.JsonDesign;
 import com.mightyfilipns.chipmakermc.Placment.Placer;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.context.CommandContext;
@@ -90,9 +88,7 @@ public class TestCmds
 
     public static int TestHyperGraph(CommandContext<ServerCommandSource> context)
     {
-        var des = Chipmakermc.loaded_design;
-        var mod = (JsonDesign.DesignModule)des.modules.values().toArray()[0];
-        Router.DoRouting(context, mod, Placer.g_mp, Placer.rel_port_pos);
+        Router.DoRouting(context);
         return 1;
     }
 
@@ -109,7 +105,7 @@ public class TestCmds
         //RedstoneWireBuilder.FixHypergraphAdjList(0, h);
         //RedstoneWireBuilder.BuildHypergraph(context.getSource().getWorld(), h, Router.g_rep_map, NewPlacer.last_pos.getY() + NewPlacer.Y_CELL_SIZE);
         TwoPinNet tpn = Router.cached_tpn.get(index);
-        RedstoneWireBuilder.BuildTwoPin(context.getSource().getWorld(), tpn, Placer.last_pos.getY() + Placer.Y_MAX_CELL_SIZE);
+        RedstoneWireBuilder.BuildTwoPin(context.getSource().getWorld(), tpn, Placer.start_pos.getY() + Placer.Y_MAX_CELL_SIZE);
         return 1;
     }
 

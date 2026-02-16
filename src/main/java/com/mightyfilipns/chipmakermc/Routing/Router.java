@@ -1,5 +1,6 @@
 package com.mightyfilipns.chipmakermc.Routing;
 
+import com.mightyfilipns.chipmakermc.Chipmakermc;
 import com.mightyfilipns.chipmakermc.JsonLoader.CellInfo;
 import com.mightyfilipns.chipmakermc.JsonLoader.JsonDesign;
 import com.mightyfilipns.chipmakermc.JsonLoader.AbstractCell;
@@ -14,7 +15,6 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3i;
-import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.*;
 
@@ -27,8 +27,19 @@ public class Router
 
     public static int max_y = 80;
 
-    public static void DoRouting(CommandContext<ServerCommandSource> context, JsonDesign.DesignModule mod, Map<CellInfo, BlockPos> cellmap, Map<Integer, BlockPos> port_rel_pos)
+    public static int DoRouting(CommandContext<ServerCommandSource> context)
     {
+        var des = Chipmakermc.loaded_design;
+        var mod = (JsonDesign.DesignModule)des.modules.values().toArray()[0];
+        var cellmap = Placer.g_mp;
+        var port_rel_pos = Placer.rel_port_pos;
+
+        if(cellmap == null || port_rel_pos == null)
+        {
+            context.getSource().sendError(Text.literal("Place a design first with /chipmaker place"));
+            return 0;
+        }
+
         Map<Integer, List<AbstractCell>> dd = new HashMap<>();
 
         LeeRouter.w = context.getSource().getWorld();
@@ -58,30 +69,15 @@ public class Router
 
         List<Map.Entry<Integer, List<AbstractCell>>> hypergraph = dd.entrySet().stream().filter(a -> a.getValue().size() > 2).toList();
         List<Map.Entry<Integer, List<AbstractCell>>> twopin = dd.entrySet().stream().filter(a -> a.getValue().size() <= 2).toList();
+
+        context.getSource().sendFeedback(() -> Text.literal("Constructing HyperGraphNet and TwoPinNet lists"), false);
         var hy = HandleHyperGraphs(hypergraph, cellmap, port_rel_pos);
         var tpn = HandleTwoPinNets(twopin, cellmap, port_rel_pos);
 
+        context.getSource().sendFeedback(() -> Text.literal("Make the ObstacleMap"), false);
         ObstacleMap obm = new ObstacleMap(hy, tpn);
 
         var w = context.getSource().getWorld();
-
-        HashSet<Pair<Integer, Integer>> port_map = new HashSet<>();
-
-        for (TwoPinNet tp : tpn)
-        {
-            port_map.addAll(Misc.MakeObstMapFromPort(tp.p1, tp.p1dir));
-            port_map.addAll(Misc.MakeObstMapFromPort(tp.p2, tp.p1dir.Invert()));
-        }
-
-        for (HyperGraphNet hyperGraphNet : hy)
-        {
-            for (int i = 0; i < hyperGraphNet.pin_port_pos.size(); i++)
-            {
-                var pinPortPo = hyperGraphNet.pin_port_pos.get(i);
-                PortDirection dir = i == hyperGraphNet.out_port_pos ? PortDirection.Output : PortDirection.Input;
-                port_map.addAll(Misc.MakeObstMapFromPort(pinPortPo, dir));
-            }
-        }
 
         int starty = pos.getY() + Placer.Y_MAX_CELL_SIZE;
 
@@ -90,20 +86,24 @@ public class Router
         cached_tpn = tpn;
         for (HyperGraphNet hp : hy)
         {
-            ObstFixAndFindPositionHypergraph(hp, w, obm, i, hy.size());
-            System.out.println("Building hypergraph " + (i + 1) + " of " + hy.size());
+            int finalI = i;
+            context.getSource().sendFeedback(() -> Text.literal("Placing Hypergraph " + (finalI + 1) + " of " + hy.size()), false);
+            ObstFixAndFindPositionHypergraph(hp, w, obm, i);
+            context.getSource().sendFeedback(() -> Text.literal("Building hypergraph " + (finalI + 1) + " of " + hy.size()), false);
             BuildHyperGraph(hp, w,  starty + hp.y_pos * 2);
             i++;
         }
         i = 0;
         for (TwoPinNet twoPinNet : tpn)
         {
-            ObstFixAndFindPositionTwoPin(twoPinNet, w, obm, i, hy.size());
-            System.out.println("Building two pin net " + (i + 1) + " of " + tpn.size());
+            int finalI = i;
+            context.getSource().sendFeedback(() -> Text.literal("Placing two pin net " + (finalI + 1) + " of " + tpn.size()), false);
+            ObstFixAndFindPositionTwoPin(twoPinNet, w, obm, i);
+            context.getSource().sendFeedback(() -> Text.literal("Building two pin net " + (finalI + 1) + " of " + tpn.size()), false);
             BuildTwoPinNet(twoPinNet, w, starty + twoPinNet.y_pos * 2);
             i++;
         }
-        System.out.println("Building hypergraph vertical connectors");
+        context.getSource().sendFeedback(() -> Text.literal("Building hypergraph vertical connectors"), false);
         for (HyperGraphNet hyperGraphNet : hy)
         {
             for (int j = 0; j < hyperGraphNet.pin_port_pos.size(); j++)
@@ -119,7 +119,7 @@ public class Router
                 }
             }
         }
-        System.out.println("Building two pin vertical connectors");
+        context.getSource().sendFeedback(() -> Text.literal("Building two pin vertical connectors"), false);
         for (TwoPinNet tp : tpn)
         {
             if (tp.p1dir == PortDirection.Input)
@@ -133,7 +133,7 @@ public class Router
                 VerticalBuilder.BuildDownwards(w, tp.p2, tp.p2.withY(starty + tp.y_pos * 2));
             }
         }
-        System.out.println("Building hypergraph net wires");
+        context.getSource().sendFeedback(() -> Text.literal("Building hypergraph net wires"), false);
         for (HyperGraphNet hyperGraphNet : hy)
         {
             RedstoneWireBuilder.FixPointTooClose(0, hyperGraphNet);
@@ -141,7 +141,7 @@ public class Router
             RedstoneWireBuilder.BuildHypergraph(w, hyperGraphNet, starty);
         }
         i = 0;
-        System.out.println("Building two pin net wires");
+        context.getSource().sendFeedback(() -> Text.literal("Building two pin net wires"), false);
         for (TwoPinNet twoPinNet : tpn)
         {
             RedstoneWireBuilder.BuildTwoPin(w, twoPinNet, starty);
@@ -149,6 +149,7 @@ public class Router
         }
 
         max_y = starty + obm.GetMaxY() * 2 + 1;
+        return 1;
     }
 
     public static void RebuildCache(CommandContext<ServerCommandSource> context)
@@ -160,7 +161,7 @@ public class Router
         }
         var w = context.getSource().getWorld();
         int i = 0;
-        int starty = Placer.last_pos.getY() + Placer.Y_MAX_CELL_SIZE;
+        int starty = Placer.start_pos.getY() + Placer.Y_MAX_CELL_SIZE;
         for (HyperGraphNet hp : cached_hy)
         {
             System.out.println("Building hypergraph " + (i + 1) + " of " + cached_hy.size());
@@ -221,9 +222,8 @@ public class Router
         w.setBlockState(tpn.p2.withY(y), Blocks.ORANGE_WOOL.getDefaultState());
     }
 
-    private static void ObstFixAndFindPositionHypergraph(HyperGraphNet hyperGraphNet, ServerWorld w, ObstacleMap obm, int i, int imax)
+    private static void ObstFixAndFindPositionHypergraph(HyperGraphNet hyperGraphNet, ServerWorld w, ObstacleMap obm, int i)
     {
-        System.out.println("Placing Hypergraph " + (i + 1) + " of " + imax);
         int y = 0;
         boolean dfs_success = false;
         do {
@@ -252,9 +252,8 @@ public class Router
         hyperGraphNet.y_pos = y;
     }
 
-    private static void ObstFixAndFindPositionTwoPin(TwoPinNet tpn, ServerWorld w, ObstacleMap obm, int i, int imax)
+    private static void ObstFixAndFindPositionTwoPin(TwoPinNet tpn, ServerWorld w, ObstacleMap obm, int i)
     {
-        System.out.println("Placing two pin net " + (i + 1) + " of" + imax);
         int y = 0;
         boolean dfs_success = false;
         do {

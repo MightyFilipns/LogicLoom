@@ -38,30 +38,13 @@ public class Misc
         else // Output
         {
             pts2 = new ArrayList<>();
-            //pts2.add(Pair.of(p1.getX() - 1, p1.getZ() + 1));
-            //pts2.add(Pair.of(p1.getX() - 1, p1.getZ() - 1));
         }
         ret.addAll(pts2);
         return ret;
     }
     public static HashSet<Pair<Integer, Integer>> MakeObstMapFromPortRemove(BlockPos p1, PortDirection dir)
     {
-        var pts1 = GetSurroundingPoints(AsPair(p1));
-        HashSet<Pair<Integer, Integer>> ret = new HashSet<>(pts1);
-        List<Pair<Integer, Integer>> pts2;
-        ret.add(AsPair(p1));
-        if (dir == PortDirection.Input)
-        {
-            pts2 = GetSurroundingPoints(AsPair(p1.add(1, 0, 0)));
-            ret.add(AsPair(p1.add(1, 0, 0)));
-        }
-        else // Output
-        {
-            pts2 = new ArrayList<>();
-            //pts2.add(Pair.of(p1.getX() - 1, p1.getZ() + 1));
-            //pts2.add(Pair.of(p1.getX() - 1, p1.getZ() - 1));
-        }
-        ret.addAll(pts2);
+        HashSet<Pair<Integer, Integer>> ret = MakeObstMapFromPort(p1, dir);
         if(dir == PortDirection.Input)
         {
             ret.remove(Pair.of(p1.getX() + 1, p1.getZ()));
