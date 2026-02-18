@@ -5,12 +5,14 @@ import com.mightyfilipns.chipmakermc.JsonLoader.JsonDesign;
 import com.mightyfilipns.chipmakermc.JsonLoader.JsonLoadCommand;
 import com.mightyfilipns.chipmakermc.JsonLoader.PortDirection;
 import com.mightyfilipns.chipmakermc.Misc.CellTypeSuggestionProvider;
+import com.mightyfilipns.chipmakermc.Misc.ForceWireModeSuggestionProvider;
 import com.mightyfilipns.chipmakermc.Misc.VCDHandler;
 import com.mightyfilipns.chipmakermc.Placment.FixedPointsManager;
 import com.mightyfilipns.chipmakermc.Placment.Placer;
 import com.mightyfilipns.chipmakermc.Routing.Misc;
 import com.mightyfilipns.chipmakermc.Routing.Router;
 import com.mightyfilipns.chipmakermc.Routing.TestCmds;
+import com.mightyfilipns.chipmakermc.Misc.WireDebugger;
 import com.mojang.brigadier.arguments.*;
 import com.mojang.brigadier.context.CommandContext;
 import net.fabricmc.api.ModInitializer;
@@ -29,6 +31,7 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 
+import static com.mightyfilipns.chipmakermc.JsonLoader.JsonLoadCommand.ValidatePath;
 import static com.mightyfilipns.chipmakermc.Placment.Placer.placement_data;
 
 public class Chipmakermc implements ModInitializer
@@ -41,7 +44,7 @@ public class Chipmakermc implements ModInitializer
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
             dispatcher.register(CommandManager.literal("chipmaker").requires(CommandManager.requirePermissionLevel(CommandManager.GAMEMASTERS_CHECK))
                     .then(CommandManager.literal("load_json").then(CommandManager.argument("file_path" ,StringArgumentType.greedyString()).executes(JsonLoadCommand::LoadJSONDesign)))
-                    .then(CommandManager.literal("set_start_pos").then(CommandManager.argument("block_pos", BlockPosArgumentType.blockPos()).executes(Chipmakermc::SetBlockPos)))
+                    .then(CommandManager.literal("start_pos").executes(Chipmakermc::PrintStartPos).then(CommandManager.argument("block_pos", BlockPosArgumentType.blockPos()).executes(Chipmakermc::SetBlockPos)))
                     .then(CommandManager.literal("place").executes(Placer::PlaceDesign))
                     .then(CommandManager.literal("param")
                             .then(CommandManager.literal("max_iter")
@@ -86,6 +89,7 @@ public class Chipmakermc implements ModInitializer
                             .then(CommandManager.literal("clear").executes(FixedPointsManager::ClearAllPoints))
                     )
                     .then(CommandManager.literal("misc")
+                            .then(CommandManager.literal("force_power_wire").then(CommandManager.argument("type", StringArgumentType.word()).suggests(ForceWireModeSuggestionProvider.Provider()).executes(WireDebugger::ForcePowerWires)))
                             .then(CommandManager.literal("check_wires").executes(Chipmakermc::CheckWires))
                             .then(CommandManager.literal("show_boundary").executes(Chipmakermc::ShowBoundBox))
                             .then(CommandManager.literal("wipe").executes(Chipmakermc::Wipe))
@@ -93,7 +97,7 @@ public class Chipmakermc implements ModInitializer
                     .then(CommandManager.literal("route").executes(Router::DoRouting))
                     .then(CommandManager.literal("debug")
                             .then(CommandManager.literal("place_cache").executes(Placer::PlaceCache))
-                            .then(CommandManager.literal("vcddebug").executes(Chipmakermc::VCDDebug))
+                            .then(CommandManager.literal("vcddebug").then(CommandManager.argument("file_path", StringArgumentType.greedyString()).executes(Chipmakermc::VCDDebug)))
                             .then(CommandManager.literal("vcdcomp").executes(Chipmakermc::VCDComp))
                             .then(CommandManager.literal("test_cell_port").then(CommandManager.argument("cell_type", StringArgumentType.word()).suggests(CellTypeSuggestionProvider.Provider()).then(CommandManager.argument("pos", BlockPosArgumentType.blockPos()).executes(Chipmakermc::TestCellPorts))))
                             .then(CommandManager.literal("test_tree").then(CommandManager.argument("start_pos", BlockPosArgumentType.blockPos()).executes(TestCmds::TestTree)))
@@ -120,6 +124,19 @@ public class Chipmakermc implements ModInitializer
                 }
             }
         );
+    }
+
+    public static int PrintStartPos(CommandContext<ServerCommandSource> context)
+    {
+        if (Placer.start_pos == null)
+        {
+            context.getSource().sendMessage(Text.of("Not position set"));
+        }
+        else
+        {
+            context.getSource().sendMessage(Text.of("Start set to " + Placer.start_pos));
+        }
+        return 1;
     }
 
     public static int TestCellPorts(CommandContext<ServerCommandSource> context)
@@ -177,12 +194,21 @@ public class Chipmakermc implements ModInitializer
 
     public static int VCDDebug(CommandContext<ServerCommandSource> context)
     {
-        VCDHandler.LoadVCD("/home/Filip/.teroshdl/build/dump.vcd");
+        String file_path = StringArgumentType.getString(context, "file_path");
+
+        if (!ValidatePath(context, file_path))
+            return 0;
+
+        VCDHandler.LoadVCD(file_path);
         return 1;
     }
     public static int VCDComp(CommandContext<ServerCommandSource> context)
     {
-        VCDHandler.GetCurrentValuesAndCompare(context.getSource().getWorld());
+        if (Misc.CheckStartPos(context))
+        {
+            return 0;
+        }
+        VCDHandler.GetCurrentValuesAndCompare(context.getSource().getWorld(), context.getSource());
         return 1;
     }
     public static int CheckWires(CommandContext<ServerCommandSource> context)
@@ -197,7 +223,7 @@ public class Chipmakermc implements ModInitializer
             return 0;
         }
 
-        VCDHandler.CheckWires(context);
+        WireDebugger.CheckWires(context);
         return 1;
     }
     public static int Wipe(CommandContext<ServerCommandSource> context)

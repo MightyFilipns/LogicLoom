@@ -20,26 +20,8 @@ public class JsonLoadCommand
         JsonDesign deg;
 
         String file_path = StringArgumentType.getString(context, "file_path");
-        var ph = Path.of(file_path);
-        var p = ph.toFile();
-        if (!p.exists())
-        {
-            context.getSource().sendError(Text.of("File does not exist: " + file_path));
+        if (!ValidatePath(context, file_path))
             return 0;
-        }
-        if (!p.isFile())
-        {
-            context.getSource().sendError(Text.of("Not a file: " + file_path));
-            return 0;
-        }
-        var dir = context.getSource().getServer().getRunDirectory();
-
-        // Allow singe player worlds to load from anywhere
-        if (!ph.startsWith(dir) && context.getSource().getServer().isDedicated())
-        {
-            context.getSource().sendError(Text.of("Not in a subdirectory of: " + dir));
-            return 0;
-        }
 
         try(FileReader sf = new FileReader(file_path)) {
            deg = d.fromJson(sf, JsonDesign.class);
@@ -56,5 +38,29 @@ public class JsonLoadCommand
         context.getSource().sendMessage(Text.literal("Loaded module " + deg.modules.keySet().toArray(new String[] {})[0]));
         Chipmakermc.loaded_design = deg;
         return 1;
+    }
+
+    public static boolean ValidatePath(CommandContext<ServerCommandSource> context, String file_path) {
+        var ph = Path.of(file_path);
+        var p = ph.toFile();
+        if (!p.exists())
+        {
+            context.getSource().sendError(Text.of("File does not exist: " + file_path));
+            return false;
+        }
+        if (!p.isFile())
+        {
+            context.getSource().sendError(Text.of("Not a file: " + file_path));
+            return false;
+        }
+        var dir = context.getSource().getServer().getRunDirectory();
+
+        // Allow singe player worlds to load from anywhere
+        if (!ph.startsWith(dir) && context.getSource().getServer().isDedicated())
+        {
+            context.getSource().sendError(Text.of("Not in a subdirectory of: " + dir));
+            return false;
+        }
+        return true;
     }
 }

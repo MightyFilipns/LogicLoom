@@ -4,7 +4,7 @@
   "version": "${version}",
   "name": "ChipMakerMC",
   "description": "",
-  "authors": [],
+  "authors": ["MightyFilipns"],
   "contact": {},
   "license": "MIT",
   "icon": "assets/chipmakermc/icon.png",

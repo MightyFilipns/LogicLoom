@@ -6,8 +6,6 @@ import com.mightyfilipns.chipmakermc.Placment.Placer;
 import com.mightyfilipns.chipmakermc.Routing.HyperGraphNet;
 import com.mightyfilipns.chipmakermc.Routing.Router;
 import com.mightyfilipns.chipmakermc.Routing.TwoPinNet;
-import com.mojang.brigadier.context.CommandContext;
-import net.minecraft.block.Blocks;
 import net.minecraft.block.RedstoneWireBlock;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.world.ServerWorld;
@@ -29,21 +27,28 @@ public class VCDHandler
     static Map<String, Boolean> g_valuemap = new HashMap<>();
     static Map<Integer, BlockPos> netid_toout_pos = null;
 
-    public static void GetCurrentValuesAndCompare(ServerWorld w)
+    public static void GetCurrentValuesAndCompare(ServerWorld w, ServerCommandSource source)
     {
+        if (g_valuemap.isEmpty())
+        {
+            source.sendError(Text.literal("Load VCD data using /chipmaker debug vcddebug"));
+            return;
+        }
         Map<String, Boolean> valuemap = new HashMap<>();
         netid_toout_pos = new HashMap<>();
+        int starty = Placer.start_pos.getY() + Placer.Y_MAX_CELL_SIZE;
         for (HyperGraphNet hyperGraphNet : Router.cached_hy)
         {
-            var outpos = hyperGraphNet.all_points.get(hyperGraphNet.allpoints_pos).withY(Placer.start_pos.getY());
-            var isext = w.isReceivingRedstonePower(outpos);
+            var outpos = hyperGraphNet.all_points.get(hyperGraphNet.allpoints_pos).withY(starty + hyperGraphNet.y_pos * 2 + 1);
+            var isext = w.getBlockState(outpos).get(RedstoneWireBlock.POWER) != 0;
             valuemap.put(id_netname.get(hyperGraphNet.net_id), isext);
             netid_toout_pos.put(hyperGraphNet.net_id, outpos);
         }
         for (TwoPinNet tpn : Router.cached_tpn)
         {
-            var outpos = tpn.p1dir == PortDirection.Output ? tpn.p1.withY(Placer.start_pos.getY()) : tpn.p2.withY(Placer.start_pos.getY());
-            var isext = w.isReceivingRedstonePower(outpos);
+            int y = starty + tpn.y_pos * 2 + 1;
+            var outpos = tpn.p1dir == PortDirection.Output ? tpn.p1.withY(y) : tpn.p2.withY(y);
+            var isext = w.getBlockState(outpos).get(RedstoneWireBlock.POWER) != 0;
             valuemap.put(id_netname.get(tpn.id), isext);
             netid_toout_pos.put(tpn.id, outpos);
         }
@@ -62,56 +67,9 @@ public class VCDHandler
         }
     }
 
-    public static void CheckWires(CommandContext<ServerCommandSource> context)
-    {
-        var w = context.getSource().getWorld();
-        boolean found = false;
-        for (HyperGraphNet hp : Router.cached_hy)
-        {
-            var outpos = hp.all_points.get(hp.allpoints_pos).withY(Placer.start_pos.getY());
-            var outpwr = CheckPower(w, outpos);
-            for (BlockPos allPoint : hp.pin_port_pos)
-            {
-                BlockPos inpos = allPoint.withY(Placer.start_pos.getY());
-                var pointpwr = CheckPower(w, inpos);
-                if (pointpwr != outpwr)
-                {
-                    found = true;
-                    context.getSource().sendError(Text.literal(String.format("BW: PwrOut: %s %s PwrIn: %s %s", XZ_tostring(outpos), outpwr, XZ_tostring(inpos), pointpwr)));
-                }
-            }
-        }
-        for (TwoPinNet hp : Router.cached_tpn)
-        {
-            var outpos = hp.p1dir == PortDirection.Output ? hp.p1 : hp.p2;
-            var inpos = hp.p1dir == PortDirection.Output ? hp.p2 : hp.p1;
-            var pwr1 = CheckPower(w, outpos.withY(Placer.start_pos.getY()));
-            var pwr2 = CheckPower(w, inpos.withY(Placer.start_pos.getY()));
-
-            if (pwr1 != pwr2)
-            {
-                found = true;
-                context.getSource().sendError(Text.literal(String.format("BW: PwrOut: %s %s PwrIn: %s %s", XZ_tostring(outpos), pwr1, XZ_tostring(inpos), pwr2)));
-            }
-        }
-        if (!found)
-        {
-            context.getSource().sendError(Text.literal("No bad wires found"));
-        }
-    }
-
     public static String XZ_tostring(BlockPos p)
     {
         return String.format("X: %d Z: %d", p.getX(), p.getZ());
-    }
-
-    private static boolean CheckPower(ServerWorld w, BlockPos outpos)
-    {
-        if (w.getBlockState(outpos).getBlock() == Blocks.REDSTONE_WIRE)
-        {
-            return w.getBlockState(outpos).get(RedstoneWireBlock.POWER) != 0;
-        }
-        return w.isReceivingRedstonePower(outpos);
     }
 
     public static void SetMap(JsonDesign.DesignModule m)

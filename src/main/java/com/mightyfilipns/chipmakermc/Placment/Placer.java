@@ -34,9 +34,9 @@ public class Placer
     public static final int PORT_SPACING = 6;
     public static double force_const = 0.05D;
     public static double force_mul = 1.047D;
-    public static int max_iter = 137;
+    public static int max_iter = 100;
     public static boolean do_legalization = true;
-    public static int chip_size = 400;
+    public static int chip_size = 100;
     public static BlockPos start_pos = null;
     public static boolean do_vertical = false;
     public static boolean do_actual_place = true;

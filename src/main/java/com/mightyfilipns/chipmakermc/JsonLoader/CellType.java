@@ -13,7 +13,7 @@ public enum CellType implements StringIdentifiable {
     @SerializedName("$_AND_")
     AND(6, 4 ,5, GATE_A(0, 3), GATE_B(3, 3),  GATE_Y(0, 0)),
     @SerializedName("$_OR_")
-    OR(5, 4 ,6, GATE_A(2, 1), GATE_B(2, 3),  GATE_Y(0, 3)),
+    OR(6, 4 ,5, GATE_A(0, 3), GATE_B(3, 3),  GATE_Y(4, 0)),
     @SerializedName("$_XOR_")
     XOR(6, 4 ,7, GATE_A(0, 5), GATE_B(3, 5),  GATE_Y(0, 0)),
     @SerializedName("$_NOR_")
