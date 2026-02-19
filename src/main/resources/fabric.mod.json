@@ -3,9 +3,12 @@
   "id": "chipmakermc",
   "version": "${version}",
   "name": "ChipMakerMC",
-  "description": "",
+  "description": "A mod that builds logic circuits using redstone",
   "authors": ["MightyFilipns"],
-  "contact": {},
+  "contact": {
+    "issues": "https://github.com/MightyFilipns/ChipMakerMC/issues",
+    "sources": "https://github.com/MightyFilipns/ChipMakerMC"
+  },
   "license": "MIT",
   "icon": "assets/chipmakermc/icon.png",
   "environment": "*",

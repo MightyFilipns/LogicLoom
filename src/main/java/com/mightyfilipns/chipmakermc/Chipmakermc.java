@@ -130,7 +130,7 @@ public class Chipmakermc implements ModInitializer
     {
         if (Placer.start_pos == null)
         {
-            context.getSource().sendMessage(Text.of("Not position set"));
+            context.getSource().sendMessage(Text.of("No position set"));
         }
         else
         {
