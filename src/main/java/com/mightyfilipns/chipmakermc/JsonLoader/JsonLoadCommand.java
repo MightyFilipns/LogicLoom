@@ -35,6 +35,25 @@ public class JsonLoadCommand
             context.getSource().sendError(Text.of("Invalid cells found"));
             return 0;
         }
+        if (deg.modules.isEmpty())
+        {
+            context.getSource().sendError(Text.of("No modules found"));
+            return 0;
+        }
+        if (deg.modules.size() > 1)
+        {
+            context.getSource().sendError(Text.of("More than 1 module found. All modules after the first one will be ignored."));
+        }
+        var mod = (JsonDesign.DesignModule)deg.modules.values().toArray()[0];
+        boolean inouts = mod.cells.values().stream().anyMatch(a -> a.port_directions.values().stream().anyMatch(b -> b == PortDirection.Inout));
+        inouts |= mod.ports.values().stream().anyMatch(a -> a.direction == PortDirection.Inout);
+
+        if (inouts)
+        {
+            context.getSource().sendError(Text.of("Inouts are unsupported"));
+            return 0;
+        }
+
         context.getSource().sendMessage(Text.literal("Loaded module " + deg.modules.keySet().toArray(new String[] {})[0]));
         Chipmakermc.loaded_design = deg;
         return 1;
