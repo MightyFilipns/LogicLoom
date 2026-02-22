@@ -51,6 +51,10 @@ public class Chipmakermc implements ModInitializer
                                             .then(CommandManager.argument("max_iter", IntegerArgumentType.integer(0, 10_000)).executes(Chipmakermc::SetMaxIter))
                             .executes(Chipmakermc::GetMaxIter)
                             )
+                            .then(CommandManager.literal("router_max_search")
+                                    .then(CommandManager.argument("router_max_search", IntegerArgumentType.integer(0)).executes(Chipmakermc::SetMaxSearch))
+                                    .executes(Chipmakermc::GetMaxSearch)
+                            )
                             .then(CommandManager.literal("force_const")
                                             .then(CommandManager.argument("force_const", DoubleArgumentType.doubleArg()).executes(Chipmakermc::SetForceConst))
                             .executes(Chipmakermc::GetForceConst)
@@ -325,6 +329,18 @@ public class Chipmakermc implements ModInitializer
     {
         Placer.chip_size = IntegerArgumentType.getInteger(context, "chip_size");
         context.getSource().sendMessage(Text.literal("Chip size is now: " + Placer.chip_size));
+        return 1;
+    }
+
+    static int GetMaxSearch(CommandContext<ServerCommandSource> context)
+    {
+        context.getSource().sendMessage(Text.literal("Router max search - " + Placer.LeeRouterMaxSearch));
+        return 1;
+    }
+    static int SetMaxSearch(CommandContext<ServerCommandSource> context)
+    {
+        Placer.LeeRouterMaxSearch = IntegerArgumentType.getInteger(context, "router_max_search");
+        context.getSource().sendMessage(Text.literal("Router max search is now: " + Placer.LeeRouterMaxSearch));
         return 1;
     }
 

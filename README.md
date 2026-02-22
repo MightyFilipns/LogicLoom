@@ -2,14 +2,10 @@
 A Minecraft mod for creating logic circuit and computers
 
 # Tutorial
-First write the desire logic in a VHDL language supported by Yosys
-Then use the Synth.ys script to create a JSON file this mod can load.
-
-Then open a Minecraft world, preferably a superflat one, and configure the following
-
 ## Logic synthesis
 Make sure you have installed Yosys.
-Take the Synth.ys script from this repo and add read_* commands needed to load your design.
+First write the desired logic in Verilog 2001.
+Then take the Synth.ys script from this repo and add read_verilog commands to the top of the file to read your design.
 
 Run the script with
 >yosys Synth.ys
@@ -21,10 +17,9 @@ The output JSON will be called `mc_chip_maker.json` load this file into MC using
 Ports with Inout as direction are unsupported
 The JSON file must only have one module. Only the first module is read all others are ignored.
 
-
 ## Setup parameters
 
-Maximum Iteration for the placement step
+Maximum Iterations for the placement step
 >`/mcchipmaker param max_iter NUMBER_HERE
 
 Size of the placement area along X and Y axis
@@ -37,6 +32,11 @@ Should be a small value. Default is 0.05
 Number by which to multiply the force multiplier every placement iteration
 Should be a small value. Default is 1.047
 >`/mcchipmaker param force_mul NUMBER_HERE
+
+When a straight wire between two point can't be run because of obstacles. A wave propagation algorithm is used.
+In order to sped up this algorithm a bounding box is constructed using the two points. The wave can go outside this box by a maximum of `router_max_search`.
+Default is 13
+>`/mcchipmaker param router_max_search NUMBER_HERE 
 
 Path to the file made by Yosys
 >`/mcchipmaker load_json FILE_PATH
@@ -87,6 +87,33 @@ To make sure all wire are checked you can use this command to force all wire to 
     >`/mcchipmaker misc force_power_wire Normal
 
 After running this command run the `check_wires` command
+# Internals
+# Placement
+First the circuit hypergraph is converted into a graph using the Clique model. Each connection in the clique has a weight of 2/n where n is the number of nodes in the clique.
+For global placement a force directed algorithm is used. For detailed placement a Tetris like algorithm is used.
+## Global placement
+Global placement is done in `Placer.DoPlace`
+First the connection matrix is made in `ConnMatrixBuilder`.
+Then in every iteration The following matrix equation is solved for X and Z axis
+>Ax = f + c
+
+Where f is the spreading force. c is the force from fixed cells
+
+This is iterated until
+1. The Max iteration limit is reached
+2. A cell goe out of bounds
+3. A placement with no cell overlap is reached.
+
+## Detailed placement / Legalization
+The algorithm used simply goes along the X and Z axis in both direction and selects the first valid position found.
+It's not very good and will frequently choose very far from the initial position, but it works for simple cases.
+
+# Routing
+For every hypergraph a minimal rectilinear Steiner tree (MRST) is constructed using the flute algorithm.
+The for each branch for which a straight line can not be placed a wave propagation algorithm is used.
+
+
+
 # Gallery
 <html lang="EN_US">
 <img src="/imgs/2026-02-02_10.56.12.png" width="400" alt="">
