@@ -1,5 +1,5 @@
 # MCChipMaker
-A Minecraft mod for creating logic circuit and computers
+A Minecraft mod for creating logic circuits and computers from Verilog designs.
 
 # Tutorial
 ## Logic synthesis
@@ -58,7 +58,7 @@ To modify fixed points use
 
 ## P&R
 Place the logic gates
-Make sure that the area is completely flat and on all ground blocks redstone wire and repeaters can be placed
+Make sure that the area is completely flat and on all ground blocks redstone wire and repeaters can be placed.
 >`/mcchipmaker place
  
 Place the Wires
@@ -86,7 +86,7 @@ To make sure all wire are checked you can use this command to force all wire to 
 3. Returned to the normal state
     >`/mcchipmaker misc force_power_wire Normal
 
-After running this command run the `check_wires` command
+After running this command run the `check_wires` command.
 # Internals
 # Placement
 First the circuit represented as a hypergraph is converted into a graph using the Clique model. Each connection in the clique has a weight of 2/n where n is the number of nodes in the clique.
@@ -110,7 +110,7 @@ This algorithm will be replaced with a Barnes-Hut quad tree algorithm.
 
 ## Detailed placement / Legalization
 The algorithm used simply goes along the X and Z axis in both direction and selects the first valid position found.
-It's not very good and will frequently choose very far from the initial position, but it works for simple cases.
+It's not very good and will frequently choose positions very far from the initial position, but it works for simple cases.
 
 # Routing
 First an obstacle map is constructed. Obstacles are all ports because of torch towers that are used to connect them to wires.
@@ -123,7 +123,8 @@ For each wire it tries to place it one each wire Y level starting from the botto
 In hypergraphs each branch that intersects an obstacle is routed around using Dijkstra.
 Two pin wire are routed using LeeRouter. 
 
-Then the wires is placed on the current wire Y level if possible, if not continue go onto the next Y level repeating the process until the wire is placed.
+If possible then the wire is placed on the current wire Y level and obstacles removed from maps in all Y levels above the current one.
+If not continue onto the next Y level repeating the process until the wire is placed.
 
 Note:
 The first wire Y level starts `Placer.Y_MAX_CELL_SIZE` blocks higher than the starting point. Each wire Y level is 2 blocks high.
