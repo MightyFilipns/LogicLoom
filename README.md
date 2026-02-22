@@ -89,7 +89,7 @@ To make sure all wire are checked you can use this command to force all wire to 
 After running this command run the `check_wires` command
 # Internals
 # Placement
-First the circuit hypergraph is converted into a graph using the Clique model. Each connection in the clique has a weight of 2/n where n is the number of nodes in the clique.
+First the circuit represented as a hypergraph is converted into a graph using the Clique model. Each connection in the clique has a weight of 2/n where n is the number of nodes in the clique.
 For global placement a force directed algorithm is used. For detailed placement a Tetris like algorithm is used.
 ## Global placement
 Global placement is done in `Placer.DoPlace`
@@ -115,7 +115,7 @@ It's not very good and will frequently choose very far from the initial position
 # Routing
 First an obstacle map is constructed. Obstacles are all ports because of torch towers that are used to connect them to wires.
 
-For every hypergraph a minimal rectilinear Steiner tree (MRST) is constructed using the flute algorithm.
+For every hypergraph (wire with a single input and multiple outputs) a minimal rectilinear Steiner tree (MRST) is constructed using the flute algorithm.
 The for each branch for which a straight line can not be placed a wave propagation algorithm to route around obstacles is used.
 The wave probation algorithm (LeeRouter) is functionally equivalence to Dijkstra.
 
