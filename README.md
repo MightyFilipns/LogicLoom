@@ -104,15 +104,64 @@ This is iterated until
 2. A cell goe out of bounds
 3. A placement with no cell overlap is reached.
 
+In every iteration the spreading force is calculated in `Placer.FixOverLapPossion`.
+It calculates the force between every two cells so the complexity is (n^2 - n) where N is the number of cells.
+This algorithm will be replaced with a Barnes-Hut quad tree algorithm.
+
 ## Detailed placement / Legalization
 The algorithm used simply goes along the X and Z axis in both direction and selects the first valid position found.
 It's not very good and will frequently choose very far from the initial position, but it works for simple cases.
 
 # Routing
+First an obstacle map is constructed. Obstacles are all ports because of torch towers that are used to connect them to wires.
+
 For every hypergraph a minimal rectilinear Steiner tree (MRST) is constructed using the flute algorithm.
-The for each branch for which a straight line can not be placed a wave propagation algorithm is used.
+The for each branch for which a straight line can not be placed a wave propagation algorithm to route around obstacles is used.
+The wave probation algorithm (LeeRouter) is functionally equivalence to Dijkstra.
 
+For each wire it tries to place it one each wire Y level starting from the bottom.
+In hypergraphs each branch that intersects an obstacle is routed around using Dijkstra.
+Two pin wire are routed using LeeRouter. 
 
+Then the wires is placed on the current wire Y level if possible, if not continue go onto the next Y level repeating the process until the wire is placed.
+
+Note:
+The first wire Y level starts `Placer.Y_MAX_CELL_SIZE` blocks higher than the starting point. Each wire Y level is 2 blocks high.
+
+Pseudocode:
+````java
+int y = 0;
+// Obstacle map include maps for just ports and other placed wires.
+var obstaclemap;
+
+void RouteAroundObstacleAndFindYLevel()
+{
+   while(true)
+   {
+      if(hypergraph)
+      {
+         var routed_wire = RounteHyperGraphAroundObstacles(wire, obstaclemap, y);
+         if(AttmeptPlaceWireOnLevel(routed_wire, obstaclemap, y))
+            break;
+      }
+      else
+      {
+         var routed_wire = Dijakstra(wire, obstaclemap, y);
+         // Obstacle map include maps for just ports and other placed wires.
+         if(AttmeptPlaceWireOnLevel(routed_wire, obstaclemap, y))
+            break;
+      }
+   }
+}
+````
+
+# Redstone Wire / Repeater placement
+On every corner a repeat is placed for each direction. This currently result in over use of repeaters
+
+# Vertical connectors
+For Upwards connection a simple torch tower is used taking up 1x1 blocks. Depending on the final Y level it might take up 1x2 blocks at the bottom.
+
+Downward connectors are 1x2. Depending on the Y level the bottom part can be 2x2
 
 # Gallery
 <html lang="EN_US">
