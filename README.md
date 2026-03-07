@@ -3,7 +3,7 @@ A Minecraft mod for creating logic circuits and computers from Verilog designs.
 
 # Tutorial
 ## Logic synthesis
-Make sure you have installed Yosys.
+Make sure you have installed [Yosys](https://yosyshq.readthedocs.io/projects/yosys/en/latest/getting_started/installation.html).
 First write the desired logic in Verilog 2001.
 Then take the Synth.ys script from this repo and add read_verilog commands to the top of the file to read your design.
 
