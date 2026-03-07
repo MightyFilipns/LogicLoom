@@ -71,7 +71,7 @@ This command compares starting point of all wires and checks if the power is the
 If not problematic ones are printed in the chat. If there are any issues they are usually obvious.
 
 This command can find bad wires even if everything appears to behave correctly as those bad wires might not be currently affecting the output.
-You must wait for all signals to propagate otherwise you will bad results.
+You must wait for all signals to propagate otherwise you will get bad results.
 You can speed this up with /tick sprint
 >`/mcchipmaker misc check_wires
 
