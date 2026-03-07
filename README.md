@@ -14,7 +14,7 @@ The output JSON will be called `mc_chip_maker.json` load this file into MC using
 >`/mcchipmaker load_json FILE_PATH
 
 ### Limitations 
-Ports with Inout as direction are unsupported
+Ports with Inout as direction are unsupported.
 The JSON file must only have one module. Only the first module is read all others are ignored.
 
 ## Setup parameters
