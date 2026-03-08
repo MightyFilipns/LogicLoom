@@ -1,32 +1,32 @@
 {
   "schemaVersion": 1,
-  "id": "chipmakermc",
+  "id": "logicloom",
   "version": "${version}",
-  "name": "ChipMakerMC",
+  "name": "LogicLoom",
   "description": "A mod that builds logic circuits using redstone",
   "authors": ["MightyFilipns"],
   "contact": {
-    "issues": "https://github.com/MightyFilipns/ChipMakerMC/issues",
-    "sources": "https://github.com/MightyFilipns/ChipMakerMC"
+    "issues": "https://github.com/MightyFilipns/LogicLoom/issues",
+    "sources": "https://github.com/MightyFilipns/LogicLoom"
   },
   "license": "MIT",
-  "icon": "assets/chipmakermc/icon.png",
+  "icon": "assets/logicloom/icon.png",
   "environment": "*",
   "entrypoints": {
     "fabric-datagen": [
-      "com.mightyfilipns.chipmakermc.client.ChipmakermcDataGenerator"
+      "com.mightyfilipns.logicloom.client.LogicLoomDataGenerator"
     ],
     "client": [
-      "com.mightyfilipns.chipmakermc.client.ChipmakermcClient"
+      "com.mightyfilipns.logicloom.client.LogicLoomClient"
     ],
     "main": [
-      "com.mightyfilipns.chipmakermc.Chipmakermc"
+      "com.mightyfilipns.logicloom.LogicLoom"
     ]
   },
   "mixins": [
-    "chipmakermc.mixins.json",
+    "logicloom.mixins.json",
     {
-      "config": "chipmakermc.client.mixins.json",
+      "config": "logicloom.client.mixins.json",
       "environment": "client"
     }
   ],

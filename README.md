@@ -1,4 +1,4 @@
-# MCChipMaker
+# LogicLoom
 A Minecraft mod for creating logic circuits and computers from Verilog designs.
 
 # Tutorial
@@ -11,7 +11,7 @@ Run the script with
 >yosys Synth.ys
 
 The output JSON will be called `mc_chip_maker.json` load this file into MC using
->`/mcchipmaker load_json FILE_PATH
+>`/logicloom load_json FILE_PATH
 
 ### Limitations 
 Ports with Inout as direction are unsupported.
@@ -20,26 +20,26 @@ The JSON file must only have one module. Only the first module is read all other
 ## Setup parameters
 
 Maximum Iterations for the placement step
->`/mcchipmaker param max_iter NUMBER_HERE
+>`/logicloom param max_iter NUMBER_HERE
 
 Size of the placement area along X and Y axis
->`/mcchipmaker param chip_size NUMBER_HERE
+>`/logicloom param chip_size NUMBER_HERE
 
 Force initial force multiplier used during spreading cells during placement
 Should be a small value. Default is 0.05
->`/mcchipmaker param force_const NUMBER_HERE
+>`/logicloom param force_const NUMBER_HERE
 
 Number by which to multiply the force multiplier every placement iteration
 Should be a small value. Default is 1.047
->`/mcchipmaker param force_mul NUMBER_HERE
+>`/logicloom param force_mul NUMBER_HERE
 
 When a straight wire between two point can't be run because of obstacles. A wave propagation algorithm is used.
 In order to sped up this algorithm a bounding box is constructed using the two points. The wave can go outside this box by a maximum of `router_max_search`.
 Default is 13
->`/mcchipmaker param router_max_search NUMBER_HERE 
+>`/logicloom param router_max_search NUMBER_HERE 
 
 Path to the file made by Yosys
->`/mcchipmaker load_json FILE_PATH
+>`/logicloom load_json FILE_PATH
 
 ### Fixed points
 
@@ -53,16 +53,16 @@ Position of fixed point is stored relative to the current starting point.
 If the starting point is changed after a fixed point is added the position of that fixed point in the world will change.
 
 To modify fixed points use
->/chipmaker fixed_points
+>/logicloom fixed_points
 
 
 ## P&R
 Place the logic gates
 Make sure that the area is completely flat and on all ground blocks redstone wire and repeaters can be placed.
->`/mcchipmaker place
+>`/logicloom place
  
 Place the Wires
->`/mcchipmaker route
+>`/logicloom route
 
 
 ## Fixing bad wires
@@ -73,18 +73,18 @@ If not problematic ones are printed in the chat. If there are any issues they ar
 This command can find bad wires even if everything appears to behave correctly as those bad wires might not be currently affecting the output.
 You must wait for all signals to propagate otherwise you will get bad results.
 You can speed this up with /tick sprint
->`/mcchipmaker misc check_wires
+>`/logicloom misc check_wires
 
 To make sure all wire are checked you can use this command to force all wire to be
 
 1. Powered
-    >`/mcchipmaker misc force_power_wire ON 
+    >`/logicloom misc force_power_wire ON 
 
 2. Unpowered
-    >`/mcchipmaker misc force_power_wire OFF
+    >`/logicloom misc force_power_wire OFF
 
 3. Returned to the normal state
-    >`/mcchipmaker misc force_power_wire Normal
+    >`/logicloom misc force_power_wire Normal
 
 After running this command run the `check_wires` command.
 # Internals

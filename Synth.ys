@@ -7,7 +7,7 @@ opt -sat -full
 abc
 dfflegalize -cell $_DFF_P_ 0 -cell $_DFFE_PP_ 0 -cell $_DLATCH_P_ 0
 stat
-write_json mc_chip_maker.json
-#This file is can be used in a simulator to produce a VCD file that is loaded with /chipmaker debug vcddebug
+write_json logic_loom.json
+#This file is can be used in a simulator to produce a VCD file that is loaded with /logicloom debug vcddebug
 #Its used to find bad cells
 #write_verilog -norename vcd_sim.v
