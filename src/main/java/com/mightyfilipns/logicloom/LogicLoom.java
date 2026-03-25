@@ -117,7 +117,7 @@ public class LogicLoom implements ModInitializer
             );
         });
 
-        ResourceLoader.get(PackType.SERVER_DATA).registerReloader(
+        ResourceLoader.get(PackType.SERVER_DATA).registerReloadListener(
             Identifier.fromNamespaceAndPath("logicloom", "logic_loom_res"),
             (ResourceManagerReloadListener) manager -> {
                 var dat2 = manager.getResource(Identifier.parse("logicloom:flute_data/post9.dat"));
