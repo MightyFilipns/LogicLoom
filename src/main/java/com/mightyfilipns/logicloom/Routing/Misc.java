@@ -3,9 +3,9 @@ package com.mightyfilipns.logicloom.Routing;
 import com.mightyfilipns.logicloom.JsonLoader.PortDirection;
 import com.mightyfilipns.logicloom.Placment.Placer;
 import com.mojang.brigadier.context.CommandContext;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.text.Text;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.network.chat.Component;
+import net.minecraft.core.BlockPos;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.io.IOException;
@@ -36,8 +36,8 @@ public class Misc
         ret.add(AsPair(p1));
         if (dir == PortDirection.Input)
         {
-            pts2 = GetSurroundingPoints(AsPair(p1.add(1, 0, 0)));
-            ret.add(AsPair(p1.add(1, 0, 0)));
+            pts2 = GetSurroundingPoints(AsPair(p1.offset(1, 0, 0)));
+            ret.add(AsPair(p1.offset(1, 0, 0)));
         }
         else // Output
         {
@@ -56,11 +56,11 @@ public class Misc
         return ret;
     }
 
-    public static boolean CheckStartPos(CommandContext<ServerCommandSource> context)
+    public static boolean CheckStartPos(CommandContext<CommandSourceStack> context)
     {
         if(Placer.start_pos == null)
         {
-            context.getSource().sendError(Text.literal("You must set the start_pos using /logicloom set_start_pos before using this command"));
+            context.getSource().sendFailure(Component.literal("You must set the start_pos using /logicloom set_start_pos before using this command"));
             return true;
         }
         return false;

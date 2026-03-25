@@ -1,8 +1,8 @@
 package com.mightyfilipns.logicloom.Routing;
 
-import net.minecraft.block.Blocks;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.core.BlockPos;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.*;
@@ -11,7 +11,7 @@ import static com.mightyfilipns.logicloom.Placment.Placer.LeeRouterMaxSearch;
 
 public class LeeRouter
 {
-    public static ServerWorld w = null;
+    public static ServerLevel w = null;
 
     public static List<Pair<Integer, Integer>> DoLeeRouter(ObstacleMap port_map, BlockPos start, BlockPos end, int y)
     {
@@ -58,10 +58,10 @@ public class LeeRouter
                 for (Pair<Integer, Integer> integerIntegerPair : port_map.GetMapAtY(y).keySet())
                 {
                     if(!port_map.IsFree(integerIntegerPair, y))
-                        w.setBlockState(Misc.AsBlockPos(integerIntegerPair, 0), Blocks.RED_WOOL.getDefaultState());
+                        w.setBlockAndUpdate(Misc.AsBlockPos(integerIntegerPair, 0), Blocks.RED_WOOL.defaultBlockState());
                 }
-                w.setBlockState(start.withY(1), Blocks.BLUE_WOOL.getDefaultState());
-                w.setBlockState(end.withY(1), Blocks.BLUE_WOOL.getDefaultState());
+                w.setBlockAndUpdate(start.atY(1), Blocks.BLUE_WOOL.defaultBlockState());
+                w.setBlockAndUpdate(end.atY(1), Blocks.BLUE_WOOL.defaultBlockState());
                 throw new RuntimeException("DoLeeRouter: empty new mark. End point is possibly unreachable, Try increasing the max_search");
             }
 

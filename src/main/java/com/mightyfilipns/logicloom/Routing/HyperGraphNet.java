@@ -1,7 +1,7 @@
 package com.mightyfilipns.logicloom.Routing;
 
 import com.mightyfilipns.logicloom.JsonLoader.AbstractCell;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.BlockPos;
 
 import java.util.List;
 

@@ -6,11 +6,11 @@ import com.mightyfilipns.logicloom.Placment.Placer;
 import com.mightyfilipns.logicloom.Routing.HyperGraphNet;
 import com.mightyfilipns.logicloom.Routing.Router;
 import com.mightyfilipns.logicloom.Routing.TwoPinNet;
-import net.minecraft.block.RedstoneWireBlock;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.text.Text;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.level.block.RedStoneWireBlock;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.network.chat.Component;
+import net.minecraft.core.BlockPos;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -27,11 +27,11 @@ public class VCDHandler
     static Map<String, Boolean> g_valuemap = new HashMap<>();
     static Map<Integer, BlockPos> netid_toout_pos = null;
 
-    public static void GetCurrentValuesAndCompare(ServerWorld w, ServerCommandSource source)
+    public static void GetCurrentValuesAndCompare(ServerLevel w, CommandSourceStack source)
     {
         if (g_valuemap.isEmpty())
         {
-            source.sendError(Text.literal("Load VCD data using /logicloom debug vcddebug"));
+            source.sendFailure(Component.literal("Load VCD data using /logicloom debug vcddebug"));
             return;
         }
         Map<String, Boolean> valuemap = new HashMap<>();
@@ -39,16 +39,16 @@ public class VCDHandler
         int starty = Placer.start_pos.getY() + Placer.Y_MAX_CELL_SIZE;
         for (HyperGraphNet hyperGraphNet : Router.cached_hy)
         {
-            var outpos = hyperGraphNet.all_points.get(hyperGraphNet.allpoints_pos).withY(starty + hyperGraphNet.y_pos * 2 + 1);
-            var isext = w.getBlockState(outpos).get(RedstoneWireBlock.POWER) != 0;
+            var outpos = hyperGraphNet.all_points.get(hyperGraphNet.allpoints_pos).atY(starty + hyperGraphNet.y_pos * 2 + 1);
+            var isext = w.getBlockState(outpos).getValue(RedStoneWireBlock.POWER) != 0;
             valuemap.put(id_netname.get(hyperGraphNet.net_id), isext);
             netid_toout_pos.put(hyperGraphNet.net_id, outpos);
         }
         for (TwoPinNet tpn : Router.cached_tpn)
         {
             int y = starty + tpn.y_pos * 2 + 1;
-            var outpos = tpn.p1dir == PortDirection.Output ? tpn.p1.withY(y) : tpn.p2.withY(y);
-            var isext = w.getBlockState(outpos).get(RedstoneWireBlock.POWER) != 0;
+            var outpos = tpn.p1dir == PortDirection.Output ? tpn.p1.atY(y) : tpn.p2.atY(y);
+            var isext = w.getBlockState(outpos).getValue(RedStoneWireBlock.POWER) != 0;
             valuemap.put(id_netname.get(tpn.id), isext);
             netid_toout_pos.put(tpn.id, outpos);
         }

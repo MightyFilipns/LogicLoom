@@ -6,17 +6,17 @@ import com.mightyfilipns.logicloom.JsonLoader.*;
 import com.mightyfilipns.logicloom.Misc.VCDHandler;
 import com.mightyfilipns.logicloom.Routing.Misc;
 import com.mojang.brigadier.context.CommandContext;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.block.SignBlock;
-import net.minecraft.block.entity.SignBlockEntity;
-import net.minecraft.block.entity.SignText;
-import net.minecraft.command.argument.BlockPosArgumentType;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.structure.StructurePlacementData;
-import net.minecraft.text.Text;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.StandingSignBlock;
+import net.minecraft.world.level.block.entity.SignBlockEntity;
+import net.minecraft.world.level.block.entity.SignText;
+import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
+import net.minecraft.network.chat.Component;
+import net.minecraft.core.BlockPos;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jspecify.annotations.NonNull;
 
@@ -47,20 +47,20 @@ public class Placer
     public static int LeeRouterMaxSearch = 13;
 
 
-    public static final StructurePlacementData placement_data = new StructurePlacementData();
+    public static final StructurePlaceSettings placement_data = new StructurePlaceSettings();
 
-    public static int PlaceCache(CommandContext<ServerCommandSource> context)
+    public static int PlaceCache(CommandContext<CommandSourceStack> context)
     {
         if(g_zsa == null || g_xsa == null || g_mp == null)
         {
-            context.getSource().sendError(Text.literal("Cache empty"));
+            context.getSource().sendFailure(Component.literal("Cache empty"));
             return 0;
         }
 
         var des = LogicLoom.loaded_design;
         var mod = (JsonDesign.DesignModule)des.modules.values().toArray()[0];
 
-        var pos = BlockPosArgumentType.getBlockPos(context, "start_pos");
+        var pos = BlockPosArgument.getBlockPos(context, "start_pos");
 
         List<CellInfo> cell_list = mod.cells.values().stream().sorted(Comparator.comparingInt(a -> a.cell_ID)).toList();
 
@@ -69,11 +69,11 @@ public class Placer
         return 1;
     }
 
-    public static int PlaceDesign(CommandContext<ServerCommandSource> context)
+    public static int PlaceDesign(CommandContext<CommandSourceStack> context)
     {
         if (LogicLoom.loaded_design == null)
         {
-            context.getSource().sendError(Text.literal("Load a design first with /logicloom load_json"));
+            context.getSource().sendFailure(Component.literal("Load a design first with /logicloom load_json"));
             return 0;
         }
 
@@ -91,7 +91,7 @@ public class Placer
 
         if (min_area > avaliable_area)
         {
-            context.getSource().sendError(Text.literal(String.format("Build area too small: Available area (X: %d * Z: %d) = %d : Minimum area: %d", chip_size, chip_size, avaliable_area, min_area)));
+            context.getSource().sendFailure(Component.literal(String.format("Build area too small: Available area (X: %d * Z: %d) = %d : Minimum area: %d", chip_size, chip_size, avaliable_area, min_area)));
             return 0;
         }
 
@@ -101,7 +101,7 @@ public class Placer
         return 1;
     }
 
-    private static void DoPlace(CommandContext<ServerCommandSource> context, JsonDesign.DesignModule mod)
+    private static void DoPlace(CommandContext<CommandSourceStack> context, JsonDesign.DesignModule mod)
     {
         Matrix c_x = new Matrix(mod.cells.size(), 1);
         Matrix c_z = new Matrix(mod.cells.size(), 1);
@@ -110,7 +110,7 @@ public class Placer
         Matrix connection_m = pr.getLeft();
 
         var pos = Placer.start_pos;
-        var w = context.getSource().getWorld();
+        var w = context.getSource().getLevel();
 
         rel_port_pos = new HashMap<>();
 
@@ -158,7 +158,7 @@ public class Placer
                     err = "Max iter reached: " + max_iter;
 
                 String finalErr = err;
-                context.getSource().sendMessage(Text.of(finalErr + " Overlaps: " + cnt));
+                context.getSource().sendSystemMessage(Component.nullToEmpty(finalErr + " Overlaps: " + cnt));
                 break;
             }
             if(!Arrays.stream(z_sol.getColumnPackedCopy()).allMatch(Double::isFinite))
@@ -172,7 +172,7 @@ public class Placer
             has_overlap = CheckOverlap(xsa, zsa, cell_list);
 
             int finalIter = iter;
-            context.getSource().sendMessage(Text.of("Iter: " + finalIter));
+            context.getSource().sendSystemMessage(Component.nullToEmpty("Iter: " + finalIter));
 
             obb = FixOutOfBounds(x_sol, z_sol, f_x, f_z, xsa, zsa, cell_list);
 
@@ -186,7 +186,7 @@ public class Placer
 
         if(!(iter > max_iter || obb))
         {
-            context.getSource().sendMessage(Text.of("Found valid pos without legalization"));
+            context.getSource().sendSystemMessage(Component.nullToEmpty("Found valid pos without legalization"));
         }
 
         if(do_actual_place)
@@ -197,7 +197,7 @@ public class Placer
             }
             else
             {
-                context.getSource().sendError(Text.of("Can not place cell when there is overlap"));
+                context.getSource().sendFailure(Component.nullToEmpty("Can not place cell when there is overlap"));
             }
         }
         else
@@ -209,7 +209,7 @@ public class Placer
         force_const = oldfm;
     }
 
-    private static void PlaceCells(int[] xvec, int[] zvec, CommandContext<ServerCommandSource> context, BlockPos pos, List<CellInfo> cell_list, Map<CellInfo, BlockPos> mp)
+    private static void PlaceCells(int[] xvec, int[] zvec, CommandContext<CommandSourceStack> context, BlockPos pos, List<CellInfo> cell_list, Map<CellInfo, BlockPos> mp)
     {
         for (int i = 0; i < xvec.length; i++)
         {
@@ -219,12 +219,12 @@ public class Placer
         }
     }
 
-    static void PlaceCellAt(int xoff, int zoff, int i, List<CellInfo> cil, CommandContext<ServerCommandSource> context, BlockPos pos, Map<CellInfo, BlockPos> mp)
+    static void PlaceCellAt(int xoff, int zoff, int i, List<CellInfo> cil, CommandContext<CommandSourceStack> context, BlockPos pos, Map<CellInfo, BlockPos> mp)
     {
         var ci = cil.get(i);
         CellType ct = ci.type;
-        var t = context.getSource().getWorld().getStructureTemplateManager();
-        var opt = t.getTemplate(ct.getIdentifier());
+        var t = context.getSource().getLevel().getStructureManager();
+        var opt = t.get(ct.getIdentifier());
         if (opt.isEmpty())
         {
             throw new RuntimeException("PlaceCellAt: Failed to load cell data for cell: " + ct + " using identifier " + ct.getIdentifier() + "\n" +
@@ -232,12 +232,12 @@ public class Placer
         }
         var tmplt = opt.get();
 
-        BlockPos paste_pos = pos.add(xoff, 0, zoff);
-        tmplt.place(context.getSource().getWorld(), paste_pos, null, placement_data, null, 3);
+        BlockPos paste_pos = pos.offset(xoff, 0, zoff);
+        tmplt.placeInWorld(context.getSource().getLevel(), paste_pos, null, placement_data, null, 3);
         mp.put(ci, paste_pos);
     }
 
-    private static void PlaceDebug(int[] xvec, int[] zvec, CommandContext<ServerCommandSource> context, int y_offset, List<CellInfo> cell_list)
+    private static void PlaceDebug(int[] xvec, int[] zvec, CommandContext<CommandSourceStack> context, int y_offset, List<CellInfo> cell_list)
     {
         BlockPos pos = start_pos;
         for (int i = 0; i < xvec.length; i++)
@@ -249,12 +249,12 @@ public class Placer
             {
                 System.out.println("OBB at Z: " + zvec[i] + " X:" + xvec[i]);
             }
-            BlockState defaultState = x_offset != xvec[i] || z_offset != zvec[i] ? Blocks.YELLOW_WOOL.getDefaultState() : Blocks.LIGHT_BLUE_WOOL.getDefaultState();
+            BlockState defaultState = x_offset != xvec[i] || z_offset != zvec[i] ? Blocks.YELLOW_WOOL.defaultBlockState() : Blocks.LIGHT_BLUE_WOOL.defaultBlockState();
             for (int x = 0; x < ct.x_size; x++)
             {
                 for (int z = 0; z < ct.z_size; z++)
                 {
-                    context.getSource().getWorld().setBlockState(pos.add(x_offset + x, y_offset, z_offset + z), defaultState);
+                    context.getSource().getLevel().setBlockAndUpdate(pos.offset(x_offset + x, y_offset, z_offset + z), defaultState);
                 }
             }
         }
@@ -342,10 +342,10 @@ public class Placer
         return found;
     }
 
-    private static int MarkOverlapPos(HashMap<Pair<Integer, Integer>, Integer> pos, CommandContext<ServerCommandSource> context, int y)
+    private static int MarkOverlapPos(HashMap<Pair<Integer, Integer>, Integer> pos, CommandContext<CommandSourceStack> context, int y)
     {
         var posw = start_pos;
-        var w = context.getSource().getWorld();
+        var w = context.getSource().getLevel();
         int cnt = 0;
         for (Map.Entry<Pair<Integer, Integer>, Integer> en : pos.entrySet())
         {
@@ -354,7 +354,7 @@ public class Placer
             {
                 if(!do_actual_place)
                 {
-                    w.setBlockState(posw.add(po.getLeft(), y + i - 1, po.getRight()), Blocks.RED_WOOL.getDefaultState());
+                    w.setBlockAndUpdate(posw.offset(po.getLeft(), y + i - 1, po.getRight()), Blocks.RED_WOOL.defaultBlockState());
                 }
                 cnt++;
             }
@@ -407,7 +407,7 @@ public class Placer
         return false;
     }
 
-    private static void SetupPorts(JsonDesign.DesignModule mod, BlockPos pos, ServerWorld w, Pair<Matrix, Map<Integer, List<AbstractCell>>> pr, HashMap<Integer, BlockPos> abs_port_pos, Matrix c_x, Matrix c_z, Matrix connection_m)
+    private static void SetupPorts(JsonDesign.DesignModule mod, BlockPos pos, ServerLevel w, Pair<Matrix, Map<Integer, List<AbstractCell>>> pr, HashMap<Integer, BlockPos> abs_port_pos, Matrix c_x, Matrix c_z, Matrix connection_m)
     {
         int z = -1;
         int x_counter = 0;
@@ -417,7 +417,7 @@ public class Placer
             int x = x_counter * 3;
             int xworldpos = x_counter * PORT_SPACING;
 
-            var npos = pos.add(xworldpos,0,z);
+            var npos = pos.offset(xworldpos,0,z);
 
             SetPortSignAndBlock(w, value, bit, npos);
 
@@ -432,10 +432,10 @@ public class Placer
         }
     }
 
-    private static void SetPortSignAndBlock(ServerWorld w, Map.Entry<String, JsonDesign.DesignPortInfo> value, Integer bit, BlockPos npos)
+    private static void SetPortSignAndBlock(ServerLevel w, Map.Entry<String, JsonDesign.DesignPortInfo> value, Integer bit, BlockPos npos)
     {
-        w.setBlockState(npos.add(0, 0, -1), value.getValue().direction == PortDirection.Input ?  Blocks.LEVER.getDefaultState() : Blocks.REDSTONE_LAMP.getDefaultState());
-        w.setBlockState(npos.add(1, 0, -1), Blocks.OAK_SIGN.getDefaultState().with(SignBlock.ROTATION, 8));
-        ((SignBlockEntity) w.getBlockEntity(npos.add(1, 0, -1))).setText(new SignText().withMessage(1, Text.of(value.getKey())), true);
+        w.setBlockAndUpdate(npos.offset(0, 0, -1), value.getValue().direction == PortDirection.Input ?  Blocks.LEVER.defaultBlockState() : Blocks.REDSTONE_LAMP.defaultBlockState());
+        w.setBlockAndUpdate(npos.offset(1, 0, -1), Blocks.OAK_SIGN.defaultBlockState().setValue(StandingSignBlock.ROTATION, 8));
+        ((SignBlockEntity) w.getBlockEntity(npos.offset(1, 0, -1))).setText(new SignText().setMessage(1, Component.nullToEmpty(value.getKey())), true);
     }
 }

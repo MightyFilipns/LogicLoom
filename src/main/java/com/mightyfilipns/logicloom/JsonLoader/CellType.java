@@ -1,13 +1,13 @@
 package com.mightyfilipns.logicloom.JsonLoader;
 
 import com.google.gson.annotations.SerializedName;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.StringIdentifiable;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.resources.Identifier;
+import net.minecraft.util.StringRepresentable;
+import net.minecraft.core.BlockPos;
 
 import java.util.Objects;
 
-public enum CellType implements StringIdentifiable {
+public enum CellType implements StringRepresentable {
     @SerializedName("$_NOT_")
     NOT(4, 4 ,5, GATE_A(1, 3), GATE_Y(0, 0)),
     @SerializedName("$_AND_")
@@ -104,29 +104,29 @@ public enum CellType implements StringIdentifiable {
     }
 
     @Override
-    public String asString() {
+    public String getSerializedName() {
         return this.name();
     }
 
     public Identifier getIdentifier()
     {
         return switch (this) {
-            case NOT -> Identifier.of("logicloom", "logic_gate_library/not_gate");
-            case AND -> Identifier.of("logicloom", "logic_gate_library/and_gate");
-            case OR -> Identifier.of("logicloom", "logic_gate_library/or_gate");
-            case XOR -> Identifier.of("logicloom", "logic_gate_library/xor_gate");
-            case NOR -> Identifier.of("logicloom", "logic_gate_library/nor_gate");
-            case NAND -> Identifier.of("logicloom", "logic_gate_library/nand_gate");
-            case XNOR -> Identifier.of("logicloom", "logic_gate_library/xnor_gate");
-            case ANDNOT -> Identifier.of("logicloom", "logic_gate_library/andnot_gate");
-            case ORNOT -> Identifier.of("logicloom", "logic_gate_library/ornot_gate");
-            case MUX -> Identifier.of("logicloom", "logic_gate_library/mux_gate");
-            case DFF -> Identifier.of("logicloom", "logic_gate_library/dff");
-            case DFFE -> Identifier.of("logicloom", "logic_gate_library/dffe");
-            case DLATCH -> Identifier.of("logicloom", "logic_gate_library/dlatch");
-            case MUX4 -> Identifier.of("logicloom", "logic_gate_library/mux4");
-            case MUX8 -> Identifier.of("logicloom", "logic_gate_library/mux8");
-            case MUX16 -> Identifier.of("logicloom", "logic_gate_library/mux16");
+            case NOT -> Identifier.fromNamespaceAndPath("logicloom", "logic_gate_library/not_gate");
+            case AND -> Identifier.fromNamespaceAndPath("logicloom", "logic_gate_library/and_gate");
+            case OR -> Identifier.fromNamespaceAndPath("logicloom", "logic_gate_library/or_gate");
+            case XOR -> Identifier.fromNamespaceAndPath("logicloom", "logic_gate_library/xor_gate");
+            case NOR -> Identifier.fromNamespaceAndPath("logicloom", "logic_gate_library/nor_gate");
+            case NAND -> Identifier.fromNamespaceAndPath("logicloom", "logic_gate_library/nand_gate");
+            case XNOR -> Identifier.fromNamespaceAndPath("logicloom", "logic_gate_library/xnor_gate");
+            case ANDNOT -> Identifier.fromNamespaceAndPath("logicloom", "logic_gate_library/andnot_gate");
+            case ORNOT -> Identifier.fromNamespaceAndPath("logicloom", "logic_gate_library/ornot_gate");
+            case MUX -> Identifier.fromNamespaceAndPath("logicloom", "logic_gate_library/mux_gate");
+            case DFF -> Identifier.fromNamespaceAndPath("logicloom", "logic_gate_library/dff");
+            case DFFE -> Identifier.fromNamespaceAndPath("logicloom", "logic_gate_library/dffe");
+            case DLATCH -> Identifier.fromNamespaceAndPath("logicloom", "logic_gate_library/dlatch");
+            case MUX4 -> Identifier.fromNamespaceAndPath("logicloom", "logic_gate_library/mux4");
+            case MUX8 -> Identifier.fromNamespaceAndPath("logicloom", "logic_gate_library/mux8");
+            case MUX16 -> Identifier.fromNamespaceAndPath("logicloom", "logic_gate_library/mux16");
             default -> throw new RuntimeException("getIdentifier: unknown cell type");
         };
     }

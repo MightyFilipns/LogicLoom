@@ -1,6 +1,6 @@
 package com.mightyfilipns.logicloom.Routing;
 
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.BlockPos;
 import org.apache.commons.lang3.tuple.Pair;
 
 import static com.mightyfilipns.logicloom.Routing.LeeRouter.GetSurroundingPoints;
@@ -24,7 +24,7 @@ public class DFSWireFinder
             visited_map[integer] = true;
             var p2 = hp.all_points.get(integer);
 
-            for (BlockPos bp : BlockPos.iterate(p1, p2))
+            for (BlockPos bp : BlockPos.betweenClosed(p1, p2))
             {
                 var np = Pair.of(bp.getX(), bp.getZ());
                 if(!obm.IsFreeIncludeWire(np, y))
@@ -46,7 +46,7 @@ public class DFSWireFinder
         {
             var p1 = tpn.point_list.get(i);
             var p2 = tpn.point_list.get(i - 1);
-            for (BlockPos bp : BlockPos.iterate(p1, p2))
+            for (BlockPos bp : BlockPos.betweenClosed(p1, p2))
             {
                 var np = Pair.of(bp.getX(), bp.getZ());
                 if(!obm.IsFreeIncludeWire(np, y))

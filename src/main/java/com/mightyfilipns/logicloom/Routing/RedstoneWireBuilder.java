@@ -1,10 +1,10 @@
 package com.mightyfilipns.logicloom.Routing;
 
-import net.minecraft.block.Blocks;
-import net.minecraft.block.HorizontalFacingBlock;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.HorizontalDirectionalBlock;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jspecify.annotations.NonNull;
 
@@ -14,7 +14,7 @@ import java.util.List;
 
 public class RedstoneWireBuilder
 {
-    public static void BuildHypergraph(ServerWorld w, HyperGraphNet h, int start_y)
+    public static void BuildHypergraph(ServerLevel w, HyperGraphNet h, int start_y)
     {
         int real_y = start_y + h.y_pos * 2;
         boolean[] visited = new boolean[h.adj_list.size()];
@@ -113,7 +113,7 @@ public class RedstoneWireBuilder
                 if(vx > minx && vx < maxx)
                 {
                     var rp1 = cnd1.getLeft();
-                    var np = h.all_points.get(cnd2.getRight()).add(rp1);
+                    var np = h.all_points.get(cnd2.getRight()).offset(rp1);
                     System.out.println("Moving at: " + np + " Old: " + h.all_points.get(cnd2.getRight()) + " Center: " + cnt);
                     block_pos_new.set(cnd2.getRight(), np);
                     DisconnBranches(new_adj, i, cnd2.getRight());
@@ -130,7 +130,7 @@ public class RedstoneWireBuilder
                 if(vx > minx && vx < maxx)
                 {
                     var rp1 = cnd1.getLeft();
-                    var np = h.all_points.get(cnd2.getRight()).add(rp1);
+                    var np = h.all_points.get(cnd2.getRight()).offset(rp1);
                     System.out.println("Moving at: " + np + " Center: " + cnt);
                     block_pos_new.set(cnd2.getRight(), np);
                     DisconnBranches(new_adj, i, cnd2.getRight());
@@ -227,7 +227,7 @@ public class RedstoneWireBuilder
         adj_list.get(mi).remove((Object)si);
     }
 
-    public static void DFS_build(int i, ServerWorld w, HyperGraphNet h, int real_y, boolean[] visited)
+    public static void DFS_build(int i, ServerLevel w, HyperGraphNet h, int real_y, boolean[] visited)
     {
         var p1 = h.all_points.get(i);
         for (Integer integer : h.adj_list.get(i))
@@ -242,7 +242,7 @@ public class RedstoneWireBuilder
             var absx = Math.abs(pr.getX());
             var absz = Math.abs(pr.getZ());
             var nor = new BlockPos(Integer.signum(pr.getX()), 0, Integer.signum(pr.getZ()));
-            Direction dir = Direction.fromVector(nor, Direction.UP).getOpposite(); // Intentionally invalid fall back
+            Direction dir = Direction.getNearest(nor, Direction.UP).getOpposite(); // Intentionally invalid fall back
             // It appears that sometimes that Lee algorithm that route if obstacles are found will put Steiner point in the path of other branches in the same tree causing problems
             boolean on_x = absz != 0;
             List<BlockPos> g = null;
@@ -261,8 +261,8 @@ public class RedstoneWireBuilder
                 }
                 else
                 {
-                    var repp1 = p1.withY(real_y + 1).add(nor);
-                    var repp2 = p2.withY(real_y + 1).subtract(nor);
+                    var repp1 = p1.atY(real_y + 1).offset(nor);
+                    var repp2 = p2.atY(real_y + 1).subtract(nor);
 
                     int i2 = 0;
 
@@ -275,13 +275,13 @@ public class RedstoneWireBuilder
                                 i2++;
                                 continue;
                             }
-                            w.setBlockState(new BlockPos(repp1.getX(), repp1.getY(), j), Blocks.REDSTONE_WIRE.getDefaultState(), 2 | 816);
+                            w.setBlock(new BlockPos(repp1.getX(), repp1.getY(), j), Blocks.REDSTONE_WIRE.defaultBlockState(), 2 | 816);
                             i2++;
                         }
 
                         for (int j = Math.min(repp1.getZ(), repp2.getZ()); j < Math.max(repp2.getZ(), repp1.getZ()); j += 16)
                         {
-                            w.setBlockState(new BlockPos(repp1.getX(), repp1.getY(), j), Blocks.REPEATER.getDefaultState().with(HorizontalFacingBlock.FACING, dir), 2 | 816);
+                            w.setBlock(new BlockPos(repp1.getX(), repp1.getY(), j), Blocks.REPEATER.defaultBlockState().setValue(HorizontalDirectionalBlock.FACING, dir), 2 | 816);
                         }
                     }
                     if(absz == 0)
@@ -293,20 +293,20 @@ public class RedstoneWireBuilder
                                 i2++;
                                 continue;
                             }
-                            w.setBlockState(new BlockPos(j, repp1.getY(), repp1.getZ()), Blocks.REDSTONE_WIRE.getDefaultState(), 2 | 816);
+                            w.setBlock(new BlockPos(j, repp1.getY(), repp1.getZ()), Blocks.REDSTONE_WIRE.defaultBlockState(), 2 | 816);
                             i2++;
                         }
                         for (int j = Math.min(repp1.getX(), repp2.getX()); j < Math.max(repp2.getX(), repp1.getX()); j += 16)
                         {
-                            w.setBlockState(new BlockPos(j, repp1.getY(), repp1.getZ()), Blocks.REPEATER.getDefaultState().with(HorizontalFacingBlock.FACING, dir), 2 | 816);
+                            w.setBlock(new BlockPos(j, repp1.getY(), repp1.getZ()), Blocks.REPEATER.defaultBlockState().setValue(HorizontalDirectionalBlock.FACING, dir), 2 | 816);
                         }
                     }
 
-                    w.setBlockState(repp1, Blocks.REPEATER.getDefaultState().with(HorizontalFacingBlock.FACING, dir), 2 | 816);
-                    w.setBlockState(repp2, Blocks.REPEATER.getDefaultState().with(HorizontalFacingBlock.FACING, dir), 2 | 816);
+                    w.setBlock(repp1, Blocks.REPEATER.defaultBlockState().setValue(HorizontalDirectionalBlock.FACING, dir), 2 | 816);
+                    w.setBlock(repp2, Blocks.REPEATER.defaultBlockState().setValue(HorizontalDirectionalBlock.FACING, dir), 2 | 816);
                 }
-                w.setBlockState(p1.withY(real_y + 1), Blocks.REDSTONE_WIRE.getDefaultState());
-                w.setBlockState(p2.withY(real_y + 1), Blocks.REDSTONE_WIRE.getDefaultState());
+                w.setBlockAndUpdate(p1.atY(real_y + 1), Blocks.REDSTONE_WIRE.defaultBlockState());
+                w.setBlockAndUpdate(p2.atY(real_y + 1), Blocks.REDSTONE_WIRE.defaultBlockState());
                 DFS_build(integer, w, h, real_y, visited);
             }
             else
@@ -316,20 +316,20 @@ public class RedstoneWireBuilder
         }
     }
 
-    public static void BuildTwoPin(ServerWorld w, TwoPinNet tpn, int start_y)
+    public static void BuildTwoPin(ServerLevel w, TwoPinNet tpn, int start_y)
     {
         int real_y = start_y + tpn.y_pos * 2;
         var y = real_y + 1;
         for (int i = 1; i < tpn.point_list.size(); i++)
         {
-            var p2 = tpn.point_list.get(i - 1).withY(real_y);
-            var p1 = tpn.point_list.get(i).withY(real_y);
+            var p2 = tpn.point_list.get(i - 1).atY(real_y);
+            var p1 = tpn.point_list.get(i).atY(real_y);
             var pr = p1.subtract(p2);
 
             var absx = Math.abs(pr.getX());
             var absz = Math.abs(pr.getZ());
             var nor = new BlockPos(Integer.signum(pr.getX()), 0, Integer.signum(pr.getZ()));
-            Direction dir = Direction.fromVector(nor, Direction.UP).getOpposite(); // Intentionally invalid fall back
+            Direction dir = Direction.getNearest(nor, Direction.UP).getOpposite(); // Intentionally invalid fall back
 
             // It appears that sometimes that Lee algorithm that routes if obstacles are found will put a Steiner point in the path of other branches in the same tree causing problems
             
@@ -339,8 +339,8 @@ public class RedstoneWireBuilder
             }
             else
             {
-                var repp1 = p1.withY(real_y + 1).subtract(nor);
-                var repp2 = p2.withY(real_y + 1).add(nor);
+                var repp1 = p1.atY(real_y + 1).subtract(nor);
+                var repp2 = p2.atY(real_y + 1).offset(nor);
 
                 int i2 = 0;
                 if(absx == 0)
@@ -352,13 +352,13 @@ public class RedstoneWireBuilder
                             i2++;
                             continue;
                         }
-                        w.setBlockState(new BlockPos(repp1.getX(), repp1.getY(), j), Blocks.REDSTONE_WIRE.getDefaultState(), 2 | 816);
+                        w.setBlock(new BlockPos(repp1.getX(), repp1.getY(), j), Blocks.REDSTONE_WIRE.defaultBlockState(), 2 | 816);
                         i2++;
                     }
 
                     for (int j = Math.min(repp1.getZ(), repp2.getZ()); j < Math.max(repp2.getZ(), repp1.getZ()); j += 16)
                     {
-                        w.setBlockState(new BlockPos(repp1.getX(), repp1.getY(), j), Blocks.REPEATER.getDefaultState().with(HorizontalFacingBlock.FACING, dir), 2 | 816);
+                        w.setBlock(new BlockPos(repp1.getX(), repp1.getY(), j), Blocks.REPEATER.defaultBlockState().setValue(HorizontalDirectionalBlock.FACING, dir), 2 | 816);
                     }
                 }
                 if(absz == 0)
@@ -370,22 +370,22 @@ public class RedstoneWireBuilder
                             i2++;
                             continue;
                         }
-                        w.setBlockState(new BlockPos(j, repp1.getY(), repp1.getZ()), Blocks.REDSTONE_WIRE.getDefaultState(), 2 | 816);
+                        w.setBlock(new BlockPos(j, repp1.getY(), repp1.getZ()), Blocks.REDSTONE_WIRE.defaultBlockState(), 2 | 816);
                         i2++;
                     }
                     for (int j = Math.min(repp1.getX(), repp2.getX()); j < Math.max(repp2.getX(), repp1.getX()); j += 16)
                     {
-                        w.setBlockState(new BlockPos(j, repp1.getY(), repp1.getZ()), Blocks.REPEATER.getDefaultState().with(HorizontalFacingBlock.FACING, dir), 2 | 816);
+                        w.setBlock(new BlockPos(j, repp1.getY(), repp1.getZ()), Blocks.REPEATER.defaultBlockState().setValue(HorizontalDirectionalBlock.FACING, dir), 2 | 816);
                     }
                 }
 
-                w.setBlockState(repp1, Blocks.REPEATER.getDefaultState().with(HorizontalFacingBlock.FACING, dir), 2 | 816);
-                w.setBlockState(repp2, Blocks.REPEATER.getDefaultState().with(HorizontalFacingBlock.FACING, dir), 2 | 816);
+                w.setBlock(repp1, Blocks.REPEATER.defaultBlockState().setValue(HorizontalDirectionalBlock.FACING, dir), 2 | 816);
+                w.setBlock(repp2, Blocks.REPEATER.defaultBlockState().setValue(HorizontalDirectionalBlock.FACING, dir), 2 | 816);
             }
-            w.setBlockState(p1.withY(real_y + 1), Blocks.REDSTONE_WIRE.getDefaultState());
-            w.setBlockState(p2.withY(real_y + 1), Blocks.REDSTONE_WIRE.getDefaultState());
+            w.setBlockAndUpdate(p1.atY(real_y + 1), Blocks.REDSTONE_WIRE.defaultBlockState());
+            w.setBlockAndUpdate(p2.atY(real_y + 1), Blocks.REDSTONE_WIRE.defaultBlockState());
         }
-        w.updateNeighbors(tpn.point_list.getFirst().withY(real_y + 1), Blocks.REDSTONE_WIRE);
+        w.updateNeighborsAt(tpn.point_list.getFirst().atY(real_y + 1), Blocks.REDSTONE_WIRE);
     }
 
     private static @NonNull List<BlockPos> GetIntersectorsZ(List<BlockPos> h, BlockPos p1, BlockPos p2) {

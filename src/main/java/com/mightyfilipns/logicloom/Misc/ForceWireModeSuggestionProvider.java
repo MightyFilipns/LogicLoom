@@ -5,16 +5,16 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
-import net.minecraft.server.command.ServerCommandSource;
+import net.minecraft.commands.CommandSourceStack;
 
 import java.util.concurrent.CompletableFuture;
 
-public class ForceWireModeSuggestionProvider  implements SuggestionProvider<ServerCommandSource>
+public class ForceWireModeSuggestionProvider  implements SuggestionProvider<CommandSourceStack>
 {
-    public static SuggestionProvider<ServerCommandSource> Provider(){ return new ForceWireModeSuggestionProvider();}
+    public static SuggestionProvider<CommandSourceStack> Provider(){ return new ForceWireModeSuggestionProvider();}
 
     @Override
-    public CompletableFuture<Suggestions> getSuggestions(CommandContext<ServerCommandSource> context, SuggestionsBuilder builder) throws CommandSyntaxException {
+    public CompletableFuture<Suggestions> getSuggestions(CommandContext<CommandSourceStack> context, SuggestionsBuilder builder) throws CommandSyntaxException {
         for (var value : WireDebugger.ForceWireMode.values())
         {
             builder.suggest(value.name());

@@ -4,12 +4,12 @@ import com.mightyfilipns.logicloom.JsonLoader.CellType;
 import com.mightyfilipns.logicloom.Placment.Placer;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.context.CommandContext;
-import net.minecraft.block.Blocks;
-import net.minecraft.command.argument.BlockPosArgumentType;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.structure.StructurePlacementData;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3i;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Vec3i;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.ArrayList;
@@ -18,19 +18,19 @@ import java.util.List;
 
 public class TestCmds
 {
-    public static int TestTemplate(CommandContext<ServerCommandSource> context)
+    public static int TestTemplate(CommandContext<CommandSourceStack> context)
     {
-        var t = context.getSource().getWorld().getStructureTemplateManager();
+        var t = context.getSource().getLevel().getStructureManager();
         var ct = CellType.NOT.getIdentifier();
-        var opt = t.getTemplate(ct);
+        var opt = t.get(ct);
         var tmplt = opt.get();
-        var p = BlockPosArgumentType.getBlockPos(context, "pos");
-        var pld = new StructurePlacementData();
-        tmplt.place(context.getSource().getWorld(), p, null, pld,null, 3);
+        var p = BlockPosArgument.getBlockPos(context, "pos");
+        var pld = new StructurePlaceSettings();
+        tmplt.placeInWorld(context.getSource().getLevel(), p, null, pld,null, 3);
         return 1;
     }
 
-    public static int TestLeeRouter(CommandContext<ServerCommandSource> context)
+    public static int TestLeeRouter(CommandContext<CommandSourceStack> context)
     {
         HashSet<Pair<Integer, Integer>> mp = new HashSet<>();
         mp.add(Pair.of(12, 7));
@@ -86,30 +86,30 @@ public class TestCmds
     }
 
 
-    public static int TestHyperGraph(CommandContext<ServerCommandSource> context)
+    public static int TestHyperGraph(CommandContext<CommandSourceStack> context)
     {
         Router.DoRouting(context);
         return 1;
     }
 
-    public static int RebuildCached(CommandContext<ServerCommandSource> context)
+    public static int RebuildCached(CommandContext<CommandSourceStack> context)
     {
         Router.RebuildCache(context);
         return 1;
     }
 
-    public static int BuildWire(CommandContext<ServerCommandSource> context)
+    public static int BuildWire(CommandContext<CommandSourceStack> context)
     {
         int index = IntegerArgumentType.getInteger(context, "index");
         // HyperGraphNet h = Router.cached_hy.get(index);
         //RedstoneWireBuilder.FixHypergraphAdjList(0, h);
         //RedstoneWireBuilder.BuildHypergraph(context.getSource().getWorld(), h, Router.g_rep_map, NewPlacer.last_pos.getY() + NewPlacer.Y_CELL_SIZE);
         TwoPinNet tpn = Router.cached_tpn.get(index);
-        RedstoneWireBuilder.BuildTwoPin(context.getSource().getWorld(), tpn, Placer.start_pos.getY() + Placer.Y_MAX_CELL_SIZE);
+        RedstoneWireBuilder.BuildTwoPin(context.getSource().getLevel(), tpn, Placer.start_pos.getY() + Placer.Y_MAX_CELL_SIZE);
         return 1;
     }
 
-    public static int TestTree(CommandContext<ServerCommandSource> context)
+    public static int TestTree(CommandContext<CommandSourceStack> context)
     {
         List<BlockPos> testp = new ArrayList<>();
         testp.add(new BlockPos(6,0,6));
@@ -120,7 +120,7 @@ public class TestCmds
         testp.add(new BlockPos(3,0,2));
         testp.add(new BlockPos(5,0,0));
 
-        BlockPos pos = BlockPosArgumentType.getBlockPos(context, "start_pos");
+        BlockPos pos = BlockPosArgument.getBlockPos(context, "start_pos");
 
         List<List<Integer>> d = new ArrayList<>();
 
@@ -133,12 +133,12 @@ public class TestCmds
 
         for (int i = 0; i < fr.deg; i++)
         {
-            context.getSource().getWorld().setBlockState(pos.add(fr.branch[i].x, 0, fr.branch[i].y), Blocks.LIME_WOOL.getDefaultState());
+            context.getSource().getLevel().setBlockAndUpdate(pos.offset(fr.branch[i].x, 0, fr.branch[i].y), Blocks.LIME_WOOL.defaultBlockState());
         }
 
         for (int i = fr.deg; i < 2 * fr.deg - 2; i++)
         {
-            context.getSource().getWorld().setBlockState(pos.add(fr.branch[i].x, 1, fr.branch[i].y), Blocks.BLUE_WOOL.getDefaultState());
+            context.getSource().getLevel().setBlockAndUpdate(pos.offset(fr.branch[i].x, 1, fr.branch[i].y), Blocks.BLUE_WOOL.defaultBlockState());
         }
         /*
         var p = FindMinimumSteinerRectilinearTree(testp, d);
@@ -149,12 +149,12 @@ public class TestCmds
         return 1;
     }
 
-    public static int TestVerticalBuilder(CommandContext<ServerCommandSource> context)
+    public static int TestVerticalBuilder(CommandContext<CommandSourceStack> context)
     {
-        BlockPos d = BlockPosArgumentType.getBlockPos(context, "down");
-        BlockPos p = BlockPosArgumentType.getBlockPos(context, "up");
+        BlockPos d = BlockPosArgument.getBlockPos(context, "down");
+        BlockPos p = BlockPosArgument.getBlockPos(context, "up");
         List<BlockPos> m = new ArrayList<>();
-        VerticalBuilder.BuildDownwards(context.getSource().getWorld(), d, p);
+        VerticalBuilder.BuildDownwards(context.getSource().getLevel(), d, p);
         return 1;
     }
 }

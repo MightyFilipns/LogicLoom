@@ -4,7 +4,7 @@ import com.mightyfilipns.logicloom.JsonLoader.CellInfo;
 import com.mightyfilipns.logicloom.JsonLoader.JsonDesign;
 import com.mightyfilipns.logicloom.JsonLoader.AbstractCell;
 import com.mightyfilipns.logicloom.JsonLoader.PortDirection;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.BlockPos;
 
 import java.util.List;
 import java.util.Map;
@@ -29,7 +29,7 @@ public class RouterMisc
                 }
             }
 
-            return b.type.GetPort(pin_name).relpos().add(cellmap.get(b));
+            return b.type.GetPort(pin_name).relpos().offset(cellmap.get(b));
         }
         else if(a instanceof JsonDesign.DesignPortInfo)
         {

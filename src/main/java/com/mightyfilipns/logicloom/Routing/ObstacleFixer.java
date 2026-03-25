@@ -1,8 +1,8 @@
 package com.mightyfilipns.logicloom.Routing;
 
 import com.mightyfilipns.logicloom.JsonLoader.PortDirection;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.core.BlockPos;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.*;
@@ -10,7 +10,7 @@ import java.util.*;
 public class ObstacleFixer
 {
 
-    static void FixObstaclesHyperGraph(HyperGraphNet hp, ObstacleMap port_map, ServerWorld w, int y)
+    static void FixObstaclesHyperGraph(HyperGraphNet hp, ObstacleMap port_map, ServerLevel w, int y)
     {
         port_map.TempExclude(hp.pin_port_pos.stream().map(a -> Misc.MakeObstMapFromPortRemove(a,
                 a == hp.pin_port_pos.get(hp.out_port_pos) ? PortDirection.Output : PortDirection.Input)).toList());
@@ -100,7 +100,7 @@ public class ObstacleFixer
             ConnBranches(adj_list, si, mi);
             ConnBranches(adj_list, mi, ei);
         }
-        hp.allpoints_pos = all_points.indexOf(hp.pin_port_pos.get(hp.out_port_pos).withY(0));
+        hp.allpoints_pos = all_points.indexOf(hp.pin_port_pos.get(hp.out_port_pos).atY(0));
 
         hp.SetAdjList(adj_list, all_points);
     }
@@ -136,7 +136,7 @@ public class ObstacleFixer
 
     static boolean IntersectsObstacles(BlockPos p1, BlockPos p2, ObstacleMap port_map, int y)
     {
-        for (BlockPos blockPos : BlockPos.iterate(p1, p2))
+        for (BlockPos blockPos : BlockPos.betweenClosed(p1, p2))
         {
             if (!port_map.IsFree(Pair.of(blockPos.getX(), blockPos.getZ()), y))
                 return true;
