@@ -171,7 +171,9 @@ Downward connectors are 1x2. Depending on the Y level the bottom part can be 2x2
 <img src="/imgs/2026-02-02_10.56.24.png" width="600" alt="">
 </html>
 An 8-bit calculator that can do addition, subtraction, multiplication and division.
-SystemVerilog Sources
+
+SystemVerilog source.
+Use the [Yosys-slang](https://github.com/povik/yosys-slang) plugin to use this design.
 
 ````SystemVerilog
 module SimpleCalc(mode, a, b ,res);
