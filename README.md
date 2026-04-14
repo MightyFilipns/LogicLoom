@@ -172,6 +172,7 @@ Downward connectors are 1x2. Depending on the Y level the bottom part can be 2x2
 </html>
 An 8-bit calculator that can do addition, subtraction, multiplication and division.
 SystemVerilog Sources
+
 ````SystemVerilog
 module SimpleCalc(mode, a, b ,res);
 input wire[1:0] mode;
@@ -185,7 +186,6 @@ always_comb begin
         1: res = a - b;
         2: res = a * b;
         3: res = a / b;
-
         default: begin
             res = 0;
         end
