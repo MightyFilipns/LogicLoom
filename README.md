@@ -164,10 +164,32 @@ For Upwards connection a simple torch tower is used taking up 1x1 blocks. Depend
 
 Downward connectors are 1x2. Depending on the Y level the bottom part can be 2x2
 
-# Gallery
+# Examples
 <html lang="EN_US">
 <img src="/imgs/2026-02-02_10.56.12.png" width="400" alt="">
 <div></div>
 <img src="/imgs/2026-02-02_10.56.24.png" width="600" alt="">
 </html>
 An 8-bit calculator that can do addition, subtraction, multiplication and division.
+SystemVerilog Sources
+````SystemVerilog
+module SimpleCalc(mode, a, b ,res);
+input wire[1:0] mode;
+input wire[7:0] a;
+input wire[7:0] b;
+output reg[7:0] res;
+
+always_comb begin
+    case (mode)
+        0: res = a + b;
+        1: res = a - b;
+        2: res = a * b;
+        3: res = a / b;
+
+        default: begin
+            res = 0;
+        end
+    endcase
+end
+endmodule
+````
