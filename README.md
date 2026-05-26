@@ -117,7 +117,7 @@ First an obstacle map is constructed. Obstacles are all ports because of torch t
 
 For every hypergraph (wire with a single input and multiple outputs) a minimal rectilinear Steiner tree (MRST) is constructed using the flute algorithm.
 The for each branch for which a straight line can not be placed a wave propagation algorithm to route around obstacles is used.
-The wave probation algorithm (LeeRouter) is functionally equivalence to Dijkstra.
+The wave propagation algorithm (LeeRouter) is functionally equivalent to Dijkstra.
 
 For each wire it tries to place it one each wire Y level starting from the bottom.
 In hypergraphs each branch that intersects an obstacle is routed around using Dijkstra.
