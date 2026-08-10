@@ -6,6 +6,7 @@ import com.mightyfilipns.logicloom.JsonLoader.*;
 import com.mightyfilipns.logicloom.Misc.VCDHandler;
 import com.mightyfilipns.logicloom.Routing.Misc;
 import com.mojang.brigadier.context.CommandContext;
+import net.minecraft.network.chat.TextColor;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.StandingSignBlock;
@@ -80,6 +81,11 @@ public class Placer
         if(Misc.CheckStartPos(context))
         {
             return 0;
+        }
+
+        if (FixedPointsManager.GetFixedPointsList().isEmpty())
+        {
+            context.getSource().sendSystemMessage(Component.literal("Warning: You have no fixed points set. This will probably fail").withColor(TextColor.YELLOW));
         }
 
         var des = LogicLoom.loaded_design;
@@ -191,14 +197,20 @@ public class Placer
 
         if(do_actual_place)
         {
-            if(!CheckOverlap(xsa, zsa, cell_list))
-            {
+            boolean overlap = CheckOverlap(xsa, zsa, cell_list);
+            boolean chk_oob = CheckOBB(xsa, zsa);
+
+            if(overlap)
+                context.getSource().sendFailure(Component.literal("Can not place cells when there is overlap between cells"));
+
+            if(chk_oob)
+                context.getSource().sendFailure(Component.literal("Can not place cells when some cells are which are out of bounds"));
+
+
+            if (!overlap && !chk_oob)
                 PlaceCells(xsa, zsa, context, pos, cell_list, mp);
-            }
             else
-            {
-                context.getSource().sendFailure(Component.nullToEmpty("Can not place cell when there is overlap"));
-            }
+                context.getSource().sendFailure(Component.literal("Use /logicloom param do_actual_place true to see overlaps and out of bounds"));
         }
         else
             PlaceDebug(xsa, zsa, context, 0, cell_list);
@@ -209,12 +221,24 @@ public class Placer
         force_const = oldfm;
     }
 
+    private static boolean CheckOBB(int[] xvec, int[] zvec)
+    {
+        for (int i = 0; i < xvec.length; i++)
+        {
+            int x_offset = Math.clamp(xvec[i], 0, chip_size);
+            int z_offset = Math.clamp(zvec[i], 0, chip_size);
+            if (x_offset != xvec[i] || z_offset != zvec[i])
+                return true;
+        }
+        return false;
+    }
+
     private static void PlaceCells(int[] xvec, int[] zvec, CommandContext<CommandSourceStack> context, BlockPos pos, List<CellInfo> cell_list, Map<CellInfo, BlockPos> mp)
     {
         for (int i = 0; i < xvec.length; i++)
         {
-            int x_offset = max(min(xvec[i], chip_size), 0);
-            int z_offset = max(min(zvec[i], chip_size), 0);
+            int x_offset = Math.clamp(xvec[i], 0, chip_size);
+            int z_offset = Math.clamp(zvec[i], 0, chip_size);
             PlaceCellAt(x_offset, z_offset, i, cell_list, context, pos, mp);
         }
     }
