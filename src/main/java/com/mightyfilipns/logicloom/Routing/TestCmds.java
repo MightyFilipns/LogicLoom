@@ -133,12 +133,12 @@ public class TestCmds
 
         for (int i = 0; i < fr.deg; i++)
         {
-            context.getSource().getLevel().setBlockAndUpdate(pos.offset(fr.branch[i].x, 0, fr.branch[i].y), Blocks.LIME_WOOL.defaultBlockState());
+            context.getSource().getLevel().setBlockAndUpdate(pos.offset(fr.branch[i].x, 0, fr.branch[i].y), Blocks.WOOL.lime().defaultBlockState());
         }
 
         for (int i = fr.deg; i < 2 * fr.deg - 2; i++)
         {
-            context.getSource().getLevel().setBlockAndUpdate(pos.offset(fr.branch[i].x, 1, fr.branch[i].y), Blocks.BLUE_WOOL.defaultBlockState());
+            context.getSource().getLevel().setBlockAndUpdate(pos.offset(fr.branch[i].x, 1, fr.branch[i].y), Blocks.WOOL.blue().defaultBlockState());
         }
         /*
         var p = FindMinimumSteinerRectilinearTree(testp, d);

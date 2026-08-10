@@ -183,7 +183,7 @@ public class Router
 
     private static void BuildHyperGraph(HyperGraphNet hp, ServerLevel w, int y)
     {
-        BlockState placebl = Blocks.BROWN_WOOL.defaultBlockState();
+        BlockState placebl = Blocks.WOOL.brown().defaultBlockState();
         int i = 0;
         for (List<Integer> integers : hp.adj_list)
         {
@@ -195,21 +195,21 @@ public class Router
                 {
                     w.setBlock(blockPos, placebl, 2 | 816);
                 }
-                w.setBlock(pos1, Blocks.YELLOW_WOOL.defaultBlockState(), 2 | 816);
-                w.setBlock(pos2, Blocks.YELLOW_WOOL.defaultBlockState(), 2 | 816);
+                w.setBlock(pos1, Blocks.WOOL.yellow().defaultBlockState(), 2 | 816);
+                w.setBlock(pos2, Blocks.WOOL.yellow().defaultBlockState(), 2 | 816);
             }
             i++;
         }
 
         for (BlockPos pinPortPo : hp.pin_port_pos)
         {
-            w.setBlock(pinPortPo.atY(y), Blocks.BLUE_WOOL.defaultBlockState(), 2 | 816);
+            w.setBlock(pinPortPo.atY(y), Blocks.WOOL.blue().defaultBlockState(), 2 | 816);
         }
     }
 
     private static void BuildTwoPinNet(TwoPinNet tpn, ServerLevel w, int y)
     {
-        BlockState placebl = Blocks.BROWN_WOOL.defaultBlockState();
+        BlockState placebl = Blocks.WOOL.brown().defaultBlockState();
         for (int i = 1; i < tpn.point_list.size(); i++)
         {
             var p1 = tpn.point_list.get(i - 1).atY(y);
@@ -221,10 +221,10 @@ public class Router
         }
         for (int i = 0; i < tpn.point_list.size() - 1; i++)
         {
-            w.setBlockAndUpdate(tpn.point_list.get(i).atY(y), Blocks.CYAN_WOOL.defaultBlockState());
+            w.setBlockAndUpdate(tpn.point_list.get(i).atY(y), Blocks.WOOL.cyan().defaultBlockState());
         }
-        w.setBlockAndUpdate(tpn.p1.atY(y), Blocks.ORANGE_WOOL.defaultBlockState());
-        w.setBlockAndUpdate(tpn.p2.atY(y), Blocks.ORANGE_WOOL.defaultBlockState());
+        w.setBlockAndUpdate(tpn.p1.atY(y), Blocks.WOOL.orange().defaultBlockState());
+        w.setBlockAndUpdate(tpn.p2.atY(y), Blocks.WOOL.orange().defaultBlockState());
     }
 
     private static void ObstFixAndFindPositionHypergraph(HyperGraphNet hyperGraphNet, ServerLevel w, ObstacleMap obm, int i)

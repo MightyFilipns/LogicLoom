@@ -13,23 +13,10 @@
   "icon": "assets/logicloom/icon.png",
   "environment": "*",
   "entrypoints": {
-    "fabric-datagen": [
-      "com.mightyfilipns.logicloom.client.LogicLoomDataGenerator"
-    ],
-    "client": [
-      "com.mightyfilipns.logicloom.client.LogicLoomClient"
-    ],
     "main": [
       "com.mightyfilipns.logicloom.LogicLoom"
     ]
   },
-  "mixins": [
-    "logicloom.mixins.json",
-    {
-      "config": "logicloom.client.mixins.json",
-      "environment": "client"
-    }
-  ],
   "depends": {
     "fabricloader": ">=${loader_version}",
     "fabric-api": "*",

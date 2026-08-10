@@ -162,7 +162,7 @@ public class LogicLoom implements ModInitializer
         {
             var ps = paste_pos.offset(port.relpos());
 
-            w.setBlockAndUpdate(ps, port.dir() == PortDirection.Input ? Blocks.BLUE_WOOL.defaultBlockState() : Blocks.RED_WOOL.defaultBlockState() );
+            w.setBlockAndUpdate(ps, port.dir() == PortDirection.Input ? Blocks.WOOL.blue().defaultBlockState() : Blocks.WOOL.red().defaultBlockState() );
 
             w.setBlockAndUpdate(ps.offset(0, 1, 0), Blocks.OAK_SIGN.defaultBlockState().setValue(StandingSignBlock.ROTATION, 8));
             ((SignBlockEntity) w.getBlockEntity(ps.offset(0, 1, 0))).setText(new SignText().setMessage(1, Component.nullToEmpty(port.name())), true);
@@ -188,11 +188,11 @@ public class LogicLoom implements ModInitializer
         var p = Placer.start_pos.offset(0, 10 ,0);
         for (BlockPos blockPos : BlockPos.betweenClosed(p, p.offset(Placer.chip_size, 0, 0)))
         {
-            context.getSource().getLevel().setBlockAndUpdate(blockPos, Blocks.BLUE_WOOL.defaultBlockState());
+            context.getSource().getLevel().setBlockAndUpdate(blockPos, Blocks.WOOL.blue().defaultBlockState());
         }
         for (BlockPos blockPos : BlockPos.betweenClosed(p, p.offset(0, 0, Placer.chip_size)))
         {
-            context.getSource().getLevel().setBlockAndUpdate(blockPos, Blocks.BLUE_WOOL.defaultBlockState());
+            context.getSource().getLevel().setBlockAndUpdate(blockPos, Blocks.WOOL.blue().defaultBlockState());
         }
 
         return 1;

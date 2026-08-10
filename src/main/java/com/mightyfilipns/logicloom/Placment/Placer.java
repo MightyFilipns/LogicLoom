@@ -249,7 +249,7 @@ public class Placer
             {
                 System.out.println("OBB at Z: " + zvec[i] + " X:" + xvec[i]);
             }
-            BlockState defaultState = x_offset != xvec[i] || z_offset != zvec[i] ? Blocks.YELLOW_WOOL.defaultBlockState() : Blocks.LIGHT_BLUE_WOOL.defaultBlockState();
+            BlockState defaultState = x_offset != xvec[i] || z_offset != zvec[i] ? Blocks.WOOL.yellow().defaultBlockState() : Blocks.WOOL.lightBlue().defaultBlockState();
             for (int x = 0; x < ct.x_size; x++)
             {
                 for (int z = 0; z < ct.z_size; z++)
@@ -354,7 +354,7 @@ public class Placer
             {
                 if(!do_actual_place)
                 {
-                    w.setBlockAndUpdate(posw.offset(po.getLeft(), y + i - 1, po.getRight()), Blocks.RED_WOOL.defaultBlockState());
+                    w.setBlockAndUpdate(posw.offset(po.getLeft(), y + i - 1, po.getRight()), Blocks.WOOL.red().defaultBlockState());
                 }
                 cnt++;
             }

@@ -58,10 +58,10 @@ public class LeeRouter
                 for (Pair<Integer, Integer> integerIntegerPair : port_map.GetMapAtY(y).keySet())
                 {
                     if(!port_map.IsFree(integerIntegerPair, y))
-                        w.setBlockAndUpdate(Misc.AsBlockPos(integerIntegerPair, 0), Blocks.RED_WOOL.defaultBlockState());
+                        w.setBlockAndUpdate(Misc.AsBlockPos(integerIntegerPair, 0), Blocks.WOOL.red().defaultBlockState());
                 }
-                w.setBlockAndUpdate(start.atY(1), Blocks.BLUE_WOOL.defaultBlockState());
-                w.setBlockAndUpdate(end.atY(1), Blocks.BLUE_WOOL.defaultBlockState());
+                w.setBlockAndUpdate(start.atY(1), Blocks.WOOL.blue().defaultBlockState());
+                w.setBlockAndUpdate(end.atY(1), Blocks.WOOL.blue().defaultBlockState());
                 throw new RuntimeException("DoLeeRouter: empty new mark. End point is possibly unreachable, Try increasing the max_search");
             }
 
