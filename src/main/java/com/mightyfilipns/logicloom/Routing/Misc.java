@@ -60,7 +60,7 @@ public class Misc
     {
         if(Placer.start_pos == null)
         {
-            context.getSource().sendFailure(Component.literal("You must set the start_pos using /logicloom set_start_pos before using this command"));
+            context.getSource().sendFailure(Component.literal("You must set the start_pos using /logicloom start_pos before using this command"));
             return true;
         }
         return false;

@@ -1,5 +1,6 @@
 package com.mightyfilipns.logicloom.Placment;
 
+import com.mightyfilipns.logicloom.Routing.Misc;
 import com.mojang.brigadier.arguments.DoubleArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.context.CommandContext;
@@ -34,11 +35,8 @@ public class FixedPointsManager
 
     public static int AddPointAbs(CommandContext<CommandSourceStack> context)
     {
-        if(Placer.start_pos == null)
-        {
-            context.getSource().sendFailure(Component.literal("You must set the start_pos using /logicloom set_start_pos before using this command"));
+        if(Misc.CheckStartPos(context))
             return 0;
-        }
         BlockPos pos = BlockPosArgument.getBlockPos(context, "position");
         double st = DoubleArgumentType.getDouble(context, "strength");
         FixedPoint pt = new FixedPoint(pos.getX() - Placer.start_pos.getX(), pos.getZ() - Placer.start_pos.getZ(), st);
