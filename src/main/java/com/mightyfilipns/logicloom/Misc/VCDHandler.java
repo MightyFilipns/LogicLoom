@@ -6,7 +6,7 @@ import com.mightyfilipns.logicloom.Placment.Placer;
 import com.mightyfilipns.logicloom.Routing.HyperGraphNet;
 import com.mightyfilipns.logicloom.Routing.Router;
 import com.mightyfilipns.logicloom.Routing.TwoPinNet;
-import net.minecraft.world.level.block.RedStoneWireBlock;
+import net.minecraft.world.level.block.RedstoneWireBlock;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.network.chat.Component;
@@ -40,7 +40,7 @@ public class VCDHandler
         for (HyperGraphNet hyperGraphNet : Router.cached_hy)
         {
             var outpos = hyperGraphNet.all_points.get(hyperGraphNet.allpoints_pos).atY(starty + hyperGraphNet.y_pos * 2 + 1);
-            var isext = w.getBlockState(outpos).getValue(RedStoneWireBlock.POWER) != 0;
+            var isext = w.getBlockState(outpos).getValue(RedstoneWireBlock.POWER) != 0;
             valuemap.put(id_netname.get(hyperGraphNet.net_id), isext);
             netid_toout_pos.put(hyperGraphNet.net_id, outpos);
         }
@@ -48,7 +48,7 @@ public class VCDHandler
         {
             int y = starty + tpn.y_pos * 2 + 1;
             var outpos = tpn.p1dir == PortDirection.Output ? tpn.p1.atY(y) : tpn.p2.atY(y);
-            var isext = w.getBlockState(outpos).getValue(RedStoneWireBlock.POWER) != 0;
+            var isext = w.getBlockState(outpos).getValue(RedstoneWireBlock.POWER) != 0;
             valuemap.put(id_netname.get(tpn.id), isext);
             netid_toout_pos.put(tpn.id, outpos);
         }

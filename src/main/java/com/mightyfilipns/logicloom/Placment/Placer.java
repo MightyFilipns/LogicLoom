@@ -7,6 +7,7 @@ import com.mightyfilipns.logicloom.Misc.VCDHandler;
 import com.mightyfilipns.logicloom.Routing.Misc;
 import com.mojang.brigadier.context.CommandContext;
 import net.minecraft.network.chat.TextColor;
+import net.minecraft.world.level.block.entity.SignTextSlot;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.StandingSignBlock;
@@ -204,13 +205,13 @@ public class Placer
                 context.getSource().sendFailure(Component.literal("Can not place cells when there is overlap between cells"));
 
             if(chk_oob)
-                context.getSource().sendFailure(Component.literal("Can not place cells when some cells are which are out of bounds"));
+                context.getSource().sendFailure(Component.literal("Can not place cells when some cells are out of bounds"));
 
 
             if (!overlap && !chk_oob)
                 PlaceCells(xsa, zsa, context, pos, cell_list, mp);
             else
-                context.getSource().sendFailure(Component.literal("Use /logicloom param do_actual_place true to see overlaps and out of bounds"));
+                context.getSource().sendFailure(Component.literal("Use '/logicloom param do_actual_place false' to see overlaps and out of bounds"));
         }
         else
             PlaceDebug(xsa, zsa, context, 0, cell_list);
@@ -247,7 +248,7 @@ public class Placer
     {
         var ci = cil.get(i);
         CellType ct = ci.type;
-        var t = context.getSource().getLevel().getStructureManager();
+        var t = context.getSource().getLevel().getStructureTemplateManager();
         var opt = t.get(ct.getIdentifier());
         if (opt.isEmpty())
         {
@@ -460,6 +461,6 @@ public class Placer
     {
         w.setBlockAndUpdate(npos.offset(0, 0, -1), value.getValue().direction == PortDirection.Input ?  Blocks.LEVER.defaultBlockState() : Blocks.REDSTONE_LAMP.defaultBlockState());
         w.setBlockAndUpdate(npos.offset(1, 0, -1), Blocks.OAK_SIGN.defaultBlockState().setValue(StandingSignBlock.ROTATION, 8));
-        ((SignBlockEntity) w.getBlockEntity(npos.offset(1, 0, -1))).setText(new SignText().setMessage(1, Component.nullToEmpty(value.getKey())), true);
+        ((SignBlockEntity) w.getBlockEntity(npos.offset(1, 0, -1))).setText(SignText.EMPTY.asMutable().setLine(1, Component.literal(value.getKey())).asImmutable(), SignTextSlot.FRONT);
     }
 }

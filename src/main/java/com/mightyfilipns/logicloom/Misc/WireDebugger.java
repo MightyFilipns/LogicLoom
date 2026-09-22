@@ -9,7 +9,7 @@ import com.mightyfilipns.logicloom.Routing.TwoPinNet;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.RedStoneWireBlock;
+import net.minecraft.world.level.block.RedstoneWireBlock;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.network.chat.Component;
@@ -106,6 +106,6 @@ public class WireDebugger
             return true;
         if(w.getBlockState(outpos).getBlock() == Blocks.AIR)
             return false;
-        return w.getBlockState(outpos).getValue(RedStoneWireBlock.POWER) != 0;
+        return w.getBlockState(outpos).getValue(RedstoneWireBlock.POWER) != 0;
     }
 }

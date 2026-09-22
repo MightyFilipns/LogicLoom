@@ -20,7 +20,7 @@ public class TestCmds
 {
     public static int TestTemplate(CommandContext<CommandSourceStack> context)
     {
-        var t = context.getSource().getLevel().getStructureManager();
+        var t = context.getSource().getLevel().getStructureTemplateManager();
         var ct = CellType.NOT.getIdentifier();
         var opt = t.get(ct);
         var tmplt = opt.get();

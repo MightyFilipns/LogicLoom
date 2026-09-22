@@ -25,13 +25,13 @@ import net.minecraft.world.level.block.StandingSignBlock;
 import net.minecraft.world.level.block.entity.SignBlockEntity;
 import net.minecraft.world.level.block.entity.SignText;
 import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
-//import net.minecraft.resource.*;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.entity.SignTextSlot;
 
 import static com.mightyfilipns.logicloom.JsonLoader.JsonLoadCommand.ValidatePath;
 import static com.mightyfilipns.logicloom.Placment.Placer.placement_data;
@@ -152,7 +152,7 @@ public class LogicLoom implements ModInitializer
         BlockPos paste_pos = BlockPosArgument.getBlockPos(context, "pos");
 
         ServerLevel w = context.getSource().getLevel();
-        var t = w.getStructureManager();
+        var t = w.getStructureTemplateManager();
         var opt = t.get(ct.getIdentifier());
         var tmplt = opt.get();
 
@@ -165,7 +165,7 @@ public class LogicLoom implements ModInitializer
             w.setBlockAndUpdate(ps, port.dir() == PortDirection.Input ? Blocks.WOOL.blue().defaultBlockState() : Blocks.WOOL.red().defaultBlockState() );
 
             w.setBlockAndUpdate(ps.offset(0, 1, 0), Blocks.OAK_SIGN.defaultBlockState().setValue(StandingSignBlock.ROTATION, 8));
-            ((SignBlockEntity) w.getBlockEntity(ps.offset(0, 1, 0))).setText(new SignText().setMessage(1, Component.nullToEmpty(port.name())), true);
+            ((SignBlockEntity) w.getBlockEntity(ps.offset(0, 1, 0))).setText(SignText.EMPTY.asMutable().setLine(1, Component.literal(port.name())).asImmutable(), SignTextSlot.FRONT);
         }
 
         return 1;
